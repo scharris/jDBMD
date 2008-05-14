@@ -1,22 +1,22 @@
 db-metadata: provides a simple java library and NetKernel module for fetching database metadata information.
 
 Usage as a Java Library: 
-  The db-metadata.jar archive may be used as a simple Java library for fetching metadata information for a database schema.
-Use the static methods of class DBMetaData in package com.github.scharris.db_metadata, for fetching metadata information
-about tables, views, fields and foreign key links in a given schema.
+========================
+  The db-metadata.jar archive may be used as a simple Java library for fetching metadata information for a 
+database schema.  Use the static methods of class DBMetaData in package com.github.scharris.db_metadata, 
+for fetching metadata information about tables, views, fields and foreign key links in a given schema.
 
 
-Usage in NetKernel:
+Usage as a NetKernel module:
+============================
   The db-metadata.jar is also a valid NetKernel module which handles active:db-metadata uri requests.
 The metadata is returned in the following form:
 
-<database-metadata
-   schema="..." 
-   identifiers-case-sensitivity=("insensitive_stored_upper"|"insensitive_stored_lower"|"insensitive_stored_mixed"|"sensitive")>
+<database-metadata  schema="..." identifiers-case-sensitivity="...")>
 	
 	<relations>
-	  <table|view id="r:<schema>.<>" name="..." schema="...">
-		<field id="f:<schema>.<table/view-name>.<field>" name="...">
+	  <table|view id="..." name="..." schema="...">
+		<field id="..." name="...">
 		  <type>
 			<database-type/>
 			<jdbc-type-code/>
@@ -62,15 +62,16 @@ flexibility since the arguments can easily be sourced from any uri without progr
    +fks: whether to include metadata describing foreign key links in the schema, as a uri yielding "y" or "n".
 
 Example uri:
-  active:db-metadata+schema@text/plain,myschema+views@ffcpl:/etc/should-include-views+fields@data:text/plain,y+fks@data:text/plain,y
+
+active:db-metadata+schema@text/plain,myschema+views@ffcpl:/etc/include-views+fields@data:text/plain,y+fks@data:text/plain,y
 
 
 NetKernel Module Installation:
 
   1) Copy the included db-metadata.jar file into your {NetKernel-Home}/modules directory, 
      or wherever else you'd like to keep it.
-  2) Register the module's location with netkernel by entering its location in {NetKernel-Home}/etc/deployedModules.xml,
-     e.g. by adding a line like:
+  2) Register the module's location with netkernel by entering its location in 
+     {NetKernel-Home}/etc/deployedModules.xml, e.g. by adding a line like:
      	<module>modules/db-metadata.jar</module>
   3) import the module into your own client modules:
       <import><uri>urn:com:github:scharris:db-metadata</uri></import>
