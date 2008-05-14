@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?><entrypoints>
+  <entrypoint>
+    <name>icon</name>
+    <uri>ffcpl:/db-metadata/icon.png</uri>
+    <indexable>
+      <title>Module Icon</title>
+      <desc>
+      </desc>
+      <keywords/>
+    </indexable>
+    <categories>img hidden</categories>
+    <group>entrypoints</group>
+    <icon/>
+  </entrypoint>
+</entrypoints>

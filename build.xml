@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project basedir="." default="compile" name="database-md">
+
+  <property name="nk.home" value="../../NetKernel"/>
+
+  <target depends="" name="compile">
+    <javac debug="true" deprecation="true"  srcdir="." destdir="." target="1.5">
+      <classpath>
+        <pathelement location="."/>
+		<pathelement location="${nk.home}/lib/1060netkernel-2.8.5.jar"/>
+		<pathelement location="${nk.home}/modules/ext-xml-core-1.5.2.jar"/>
+		<pathelement location="${nk.home}/modules/ext-layer1-1.3.5.jar"/>
+		<pathelement location="${nk.home}/modules/mod-db"/>
+      </classpath>
+    </javac>
+  </target>
+
+  <!-- makejar -->
+  <target name="makejar"
+		  depends="clean, compile"
+		  description="generate module jar file">
+	<jar jarfile="db-metadata.jar" basedir="." includes="**/*" excludes="db-metadata.jar" />
+  </target>
+
+
+  <!-- publish -->
+  <target name="publish" depends="makejar">
+	<copy file="db-metadata.jar" todir="${nk.home}/modules/" overwrite="true"/>
+  </target>
+
+
+  <!-- clean -->
+  <target name="clean" description="clean up" >
+	<delete>
+	  <fileset dir="com" includes="**/*.class"/>
+	  <fileset dir="." includes="*.jar"/>
+	</delete>
+  </target>
+  	
+</project>

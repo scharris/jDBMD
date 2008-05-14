@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><module>
+  
+  <identity>
+    <uri>urn:com:github:scharris:db-metadata</uri>
+    <version>1.0.1</version>
+  </identity>
+  
+  <info>
+    <name>db-metadata</name>
+    <description>Database metadata module</description>
+    <type>library</type>
+  </info>
+  
+  <licence>
+    <name>BSD3</name>
+    <uri>ffcpl:/COPYING</uri> <!-- http://www.opensource.org/licenses/bsd-license.php -->
+  </licence>
+  
+  <export>
+    <uri>
+      <match>active:db-metadata\+.*</match>
+      <match>ffcpl:/entrypoints.xml</match>
+    </uri>
+  </export>
+  
+
+  <rewrite>
+  </rewrite>
+
+  
+  <mapping>
+    
+    <this>
+      <match>ffcpl:/resources/.*</match>
+      <match>ffcpl:/entrypoints.xml</match>
+	  <match>ffcpl:/COPYING</match>
+    </this>
+
+    <ura>
+      <match>active:db-metadata\+.*</match>
+      <class>com.github.scharris.db_metadata.netkernel.DBMDAccessor</class>
+    </ura>
+
+    <import>
+      <uri>urn:org:ten60:netkernel:ext:layer1</uri>
+    </import>
+    <import>
+      <uri>urn:org:ten60:netkernel:mod:db</uri>
+    </import>
+    <import>
+      <uri>urn:org:ten60:netkernel:ext:xml:core</uri>
+    </import>
+    <import>
+      <uri>urn:org:ten60:netkernel:ext:xml:ura</uri>
+    </import>
+    <import>
+      <uri>urn:org:ten60:netkernel:ext:sys</uri>
+    </import>
+
+    <super/>
+
+  </mapping>
+
+</module>

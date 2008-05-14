@@ -1,0 +1,78 @@
+db-metadata: provides a simple java library and NetKernel module for fetching database metadata information.
+
+Usage as a Java Library: 
+  The db-metadata.jar archive may be used as a simple Java library for fetching metadata information for a database schema.
+Use the static methods of class DBMetaData in package com.github.scharris.db_metadata, for fetching metadata information
+about tables, views, fields and foreign key links in a given schema.
+
+
+Usage in NetKernel:
+  The db-metadata.jar is also a valid NetKernel module which handles active:db-metadata uri requests.
+The metadata is returned in the following form:
+
+<database-metadata
+   schema="..." 
+   identifiers-case-sensitivity=("insensitive_stored_upper"|"insensitive_stored_lower"|"insensitive_stored_mixed"|"sensitive")>
+	
+	<relations>
+	  <table|view id="r:<schema>.<>" name="..." schema="...">
+		<field id="f:<schema>.<table/view-name>.<field>" name="...">
+		  <type>
+			<database-type/>
+			<jdbc-type-code/>
+			<jdbc-type-text/>
+			[<max-chars/>]
+			[<precision/>
+			 <scale/
+			 <radix/>]
+		  </type>
+	 	  <nullable/>
+		  [<primary-key-part/>]
+		</field>
+		...
+      </table|view>   
+	  ...
+	</relations>
+		
+    <foreign-key-links>
+	<link>
+		<referencing-relation name="..." schema="..."/>
+		<referenced-relation name="..." schema="..."/>
+		<match fk-field="..." pk-field="..."/>
+		...
+	</link>
+	...
+	</foreign-key-links>
+</database-metadata>
+
+
+Arguments for active:db-metadata requests in NetKernel
+------------------------------------------------------
+All arguments must be full uri's which when sourced yield the requested plain text content.
+For literal text, use a uri of the form "data:text/plain,<your literal text>".
+This makes entering literal arguments slightly more verbose, but provides increased
+flexibility since the arguments can easily be sourced from any uri without programming.
+
+   +schema: a uri which when sourced should return the schema name.  E.g. "data:text/plain,ACCOUNTING"
+
+   +views: whether to include views, as a uri yielding "y" or "n", e.g. "data:text/plain,y"
+
+   +fields: whether to include field metadata within table and view elements, as a uri yielding "y" or "n".
+
+   +fks: whether to include metadata describing foreign key links in the schema, as a uri yielding "y" or "n".
+
+Example uri:
+  active:db-metadata+schema@text/plain,myschema+views@ffcpl:/etc/should-include-views+fields@data:text/plain,y+fks@data:text/plain,y
+
+
+NetKernel Module Installation:
+
+  1) Copy the included db-metadata.jar file into your {NetKernel-Home}/modules directory, 
+     or wherever else you'd like to keep it.
+  2) Register the module's location with netkernel by entering its location in {NetKernel-Home}/etc/deployedModules.xml,
+     e.g. by adding a line like:
+     	<module>modules/db-metadata.jar</module>
+  3) import the module into your own client modules:
+      <import><uri>urn:com:github:scharris:db-metadata</uri></import>
+
+Requests, suggestions and comments are welcome.  Send to steveOfAR at domain gmail.com.
