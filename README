@@ -9,40 +9,42 @@ for fetching metadata information about tables, views, fields and foreign key li
 
 Usage as a NetKernel module:
 ============================
-  The db-metadata.jar is also a valid NetKernel module which handles active:db-metadata uri requests.
+  The db-metadata.jar is also a valid self-contained NetKernel module which handles active:db-metadata 
+uri requests.  
+
 The metadata is returned in the following form:
 
 <database-metadata  schema="..." identifiers-case-sensitivity="...")>
-	
-	<relations>
-	  <table|view id="..." name="..." schema="...">
-		<field id="..." name="...">
-		  <type>
-			<database-type/>
-			<jdbc-type-code/>
-			<jdbc-type-text/>
-			[<max-chars/>]
-			[<precision/>
-			 <scale/
-			 <radix/>]
-		  </type>
-	 	  <nullable/>
-		  [<primary-key-part/>]
-		</field>
-		...
+    
+    <relations>
+      <table|view id="..." name="..." schema="...">
+        <field id="..." name="...">
+          <type>
+            <database-type/>
+            <jdbc-type-code/>
+            <jdbc-type-text/>
+            [<max-chars/>]
+            [<precision/>
+             <scale/
+             <radix/>]
+          </type>
+          <nullable/>
+          [<primary-key-part/>]
+        </field>
+        ...
       </table|view>   
-	  ...
-	</relations>
-		
+      ...
+    </relations>
+        
     <foreign-key-links>
-	<link>
-		<referencing-relation name="..." schema="..."/>
-		<referenced-relation name="..." schema="..."/>
-		<match fk-field="..." pk-field="..."/>
-		...
-	</link>
-	...
-	</foreign-key-links>
+      <link>
+        <referencing-relation name="..." schema="..."/>
+        <referenced-relation name="..." schema="..."/>
+        <match fk-field="..." pk-field="..."/>
+        ...
+      </link>
+      ...
+    </foreign-key-links>
 </database-metadata>
 
 
@@ -61,18 +63,23 @@ flexibility since the arguments can easily be sourced from any uri without progr
 
    +fks: whether to include metadata describing foreign key links in the schema, as a uri yielding "y" or "n".
 
-Example uri:
+Example uri (on multiple lines for clarity):
 
-active:db-metadata+schema@text/plain,myschema+views@ffcpl:/etc/include-views+fields@data:text/plain,y+fks@data:text/plain,y
+  active:db-metadata
+        +schema@text/plain,myschema
+        +views@ffcpl:/etc/include-views
+        +fields@data:text/plain,y
+        +fks@data:text/plain,y
 
 
 NetKernel Module Installation:
+==============================
 
   1) Copy the included db-metadata.jar file into your {NetKernel-Home}/modules directory, 
      or wherever else you'd like to keep it.
   2) Register the module's location with netkernel by entering its location in 
      {NetKernel-Home}/etc/deployedModules.xml, e.g. by adding a line like:
-     	<module>modules/db-metadata.jar</module>
+        <module>modules/db-metadata.jar</module>
   3) import the module into your own client modules:
       <import><uri>urn:com:github:scharris:db-metadata</uri></import>
 
