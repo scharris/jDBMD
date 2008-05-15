@@ -1,14 +1,14 @@
 db-metadata: provides a simple java library and NetKernel module for fetching database metadata information.
 
 As a Java Library: 
-========================
+==================
   The db-metadata.jar archive may be used as a simple Java library for fetching metadata information for a 
 database schema.  Use class com.github.scharris.db_metadata.DBMetaData to fetch metadata information about
 tables, views, fields and foreign key links in a given schema.
 
 
 As a NetKernel module:
-============================
+======================
   The db-metadata.jar is also a valid self-contained NetKernel module which handles active:db-metadata 
 uri requests.  
 
@@ -54,6 +54,9 @@ Arguments for active:db-metadata requests in NetKernel
 
    +views: whether to include views. 
     Valid values are y/yes/n/no/t/true/f/false or else a uri yielding one of these values.
+
+   +tables: whether to include tables. 
+    Valid values are as described for the views argument.
 
    +fields: whether to include field metadata within table and view elements.  
     Valid values are as described for the views argument.
