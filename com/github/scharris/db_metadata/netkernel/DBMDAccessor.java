@@ -32,9 +32,8 @@ package com.github.scharris.db_metadata.netkernel;
  */
 
 
-import com.github.scharris.db_metadata.*;
-import com.github.scharris.db_metadata.DBMetaData.CaseSensitivity;
-import com.github.scharris.db_metadata.RelationMetaData.RelationType;
+import java.sql.Connection;
+import org.w3c.dom.Document;
 
 import com.ten60.netkernel.urii.aspect.*;
 import org.ten60.netkernel.layer1.nkf.*;
@@ -44,12 +43,7 @@ import org.ten60.netkernel.xml.xda.DOMXDA;
 import com.ten60.netkernel.util.NetKernelException;
 import org.ten60.rdbms.representation.*;
 
-import java.sql.*;
-import java.util.*;
-
-import org.w3c.dom.*;
-
-import javax.xml.parsers.*;
+import com.github.scharris.db_metadata.DBMetaData;
 
 
 
@@ -83,48 +77,12 @@ public class DBMDAccessor extends NKFAccessorImpl {
         {
             conn = connPool.acquireConnection();
             
-            DatabaseMetaData dbmd = conn.getMetaData();
-            
-            CaseSensitivity case_sens = DBMetaData.getDbCaseSensitivity(dbmd);
-            
-            schema = DBMetaData.normalizeDatabaseIdentifier(schema, case_sens);
-            
-            
-            Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-            
-            Element root_el = (Element)doc.appendChild(doc.createElement("database-metadata"));
-            if ( schema != null )
-                root_el.setAttribute("schema", schema); 
-            root_el.setAttribute("identifiers-case-sensitivity", case_sens.toString().toLowerCase());
-            
-            
-            Node rels_el = root_el.appendChild(doc.createElement("relations"));
-            
-            Map<RelationID,RelationType> included_rel_ids_and_types = 
-                DBMetaData.fetchRelationIDsAndTypes(dbmd, 
-                                                    schema,
-                                                    getOption("tables", context, true),
-                                                    getOption("views",  context, false));
-            
-            if ( getOption("fields", context, false) ) // include fields?
-            {
-                for(RelationMetaData rel_md: DBMetaData.fetchRelationMetaDatas(included_rel_ids_and_types, schema, dbmd))
-                    rels_el.appendChild(makeFullRelationElement(rel_md, doc));
-            }
-            else
-            {
-                for(Map.Entry<RelationID,RelationType> rid_rtype: included_rel_ids_and_types.entrySet())
-                    rels_el.appendChild(makeChildlessRelationElement(rid_rtype.getKey(), rid_rtype.getValue(), doc));
-            }
-            
-            // Foreign Key Links
-            if (getOption("fks", context, false))
-            {
-                Element fk_links_el = (Element)root_el.appendChild(doc.createElement("foreign-key-links"));
-                
-                for(FkLink fkl: DBMetaData.fetchForeignKeyLinks(schema, dbmd))
-                    fk_links_el.appendChild(makeForeignKeyLinkElement(fkl, doc));
-            }
+            Document doc = (new DBMetaData()).createMetaDataDOM(conn.getMetaData(),
+                                                                schema,
+                                                                getOption("tables", context, true),
+                                                                getOption("views",  context, false),
+                                                                getOption("fields", context, false),
+                                                                getOption("fks", context, false));
             
 
             DOMXDAAspect domxda_aspect = new DOMXDAAspect(new DOMXDA(doc));
@@ -152,107 +110,6 @@ public class DBMDAccessor extends NKFAccessorImpl {
             }
 
         }
-    }
-    
-    
-    public Element makeChildlessRelationElement(RelationID rel_id, RelationType rel_type, Document doc)
-    {
-        Element rel_el = doc.createElement(rel_type.toString().toLowerCase());
-                
-        rel_el.setAttribute("name", rel_id.name());
-                
-        if ( rel_id.schema() != null )
-            rel_el.setAttribute("schema", rel_id.schema());
-                
-        if ( rel_id.catalog() != null )
-            rel_el.setAttribute("catalog", rel_id.catalog());
-                
-        rel_el.setAttribute("id", "r:" + rel_id.id());
-        
-        return rel_el;
-    }
-    
-    
-    public Element makeFullRelationElement(RelationMetaData rel_md, Document doc)
-    {
-        Element rel_el = makeChildlessRelationElement(rel_md.relationID(), rel_md.relationType(), doc);
-        
-        for(Field f: rel_md.fields())
-            rel_el.appendChild(makeFieldElement(f, doc));
-        
-        return rel_el;
-    }
-    
-    protected Element makeFieldElement(Field f, Document doc)
-    {
-        Element field_el = doc.createElement("field");
-        
-        field_el.setAttribute("name", f.name());
-        
-        RelationID rel_id = f.relationID();
-        field_el.setAttribute("id", "f:" + rel_id.id() + "." + f.name().toLowerCase());
-
-        Element type_el = doc.createElement("type");
-        
-        appendChildWithText(doc, type_el, "database-type", f.dbTypeName());
-        appendChildWithText(doc, type_el, "jdbc-type-code", String.valueOf(f.jdbcTypeCode())); 
-        appendChildWithText(doc, type_el, "jdbc-type-text", DBMetaData.jdbcTypeToString(f.jdbcTypeCode())); 
-        if ( f.length() != null )
-            appendChildWithText(doc, type_el, "max-chars", String.valueOf(f.length()));
-        if ( f.precision() != null )
-            appendChildWithText(doc, type_el, "precision", String.valueOf(f.precision()));
-        if ( f.fractionalDigits() != null )
-            appendChildWithText(doc, type_el, "scale", String.valueOf(f.fractionalDigits()));
-        if ( f.radix() != null )
-            appendChildWithText(doc, type_el, "radix", String.valueOf(f.radix()));
-        if ( f.comment() != null )
-            appendChildWithText(doc, type_el, "comment", String.valueOf(f.comment()));
-        
-        field_el.appendChild(type_el);
-        
-        appendChildWithText(doc, field_el, "nullable", (f.isNullable() == null ? "unknown" : f.isNullable().toString()));
-        
-        if ( f.pkPartNum() != null )
-            appendChildWithText(doc, field_el, "primary-key-part", String.valueOf(f.pkPartNum()));
-        
-        return field_el;
-    }
-    
-    
-    public Element makeForeignKeyLinkElement(FkLink l, Document doc)
-    {
-        Element link_el = doc.createElement("link");
-       
-        Element src_rel_el = (Element)link_el.appendChild(doc.createElement("referencing-relation"));
-
-        src_rel_el.setAttribute("name", l.srcRel().name());
-
-        if (l.srcRel().schema() != null)
-            src_rel_el.setAttribute("schema", l.srcRel().schema());
-
-        if (l.srcRel().catalog() != null)
-            src_rel_el.setAttribute("catalog", l.srcRel().catalog());
-
-        
-        Element tgt_rel_el = (Element)link_el.appendChild(doc.createElement("referenced-relation"));
-        
-        tgt_rel_el.setAttribute("name", l.tgtRel().name());
-
-        if (l.tgtRel().schema() != null)
-            tgt_rel_el.setAttribute("schema", l.tgtRel().schema());
-
-        if (l.tgtRel().catalog() != null)
-            tgt_rel_el.setAttribute("catalog", l.tgtRel().catalog());
-        
-
-        for(FkComp comp: l.fkComps())
-        {
-            Element match_el = (Element)link_el.appendChild(doc.createElement("match"));
-            match_el.setAttribute("fk-field", comp.fkFieldName());
-            match_el.setAttribute("pk-field", comp.pkFieldName());
-        }
-
-       return link_el;
     }
     
     
@@ -289,13 +146,6 @@ public class DBMDAccessor extends NKFAccessorImpl {
         }
         else
             return def;
-    }
-    
-    protected static void appendChildWithText(Document doc, Node node, String child_name, String child_text)
-    {
-        Element child = doc.createElement(child_name);
-        child.setTextContent(child_text);
-        node.appendChild(child);
     }
     
 }

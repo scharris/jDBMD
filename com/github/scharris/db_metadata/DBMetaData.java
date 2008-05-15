@@ -33,20 +33,178 @@ package com.github.scharris.db_metadata;
 
 import java.sql.*;
 import java.util.*;
+import org.w3c.dom.*;
+import javax.xml.parsers.*;
 
 import com.github.scharris.db_metadata.RelationMetaData.RelationType;
 
 
 public class DBMetaData {
     
-    
     public enum CaseSensitivity { INSENSITIVE_STORED_LOWER, INSENSITIVE_STORED_UPPER, INSENSITIVE_STORED_MIXED, SENSITIVE }
     
     
-    public static Map<RelationID,RelationType> fetchRelationIDsAndTypes(Connection conn,
-                                                                        String schema,
-                                                                        boolean incl_tables,
-                                                                        boolean incl_views) throws SQLException
+    public DBMetaData()
+    {
+    }
+    
+    
+    public Document createMetaDataDOM(DatabaseMetaData dbmd,
+                                      String schema,
+                                      boolean incl_tables,
+                                      boolean incl_views,
+                                      boolean incl_fields,
+                                      boolean incl_fks) throws SQLException, ParserConfigurationException
+    {
+        CaseSensitivity case_sens = getDbCaseSensitivity(dbmd);
+
+        schema = normalizeDatabaseIdentifier(schema, case_sens);
+
+        Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+
+        Element root_el = (Element)doc.appendChild(doc.createElement("database-metadata"));
+        if (schema != null)
+            root_el.setAttribute("schema", schema);
+        root_el.setAttribute("identifiers-case-sensitivity", case_sens.toString().toLowerCase());
+
+        Node rels_el = root_el.appendChild(doc.createElement("relations"));
+
+        Map<RelationID, RelationType> included_rel_ids_and_types = fetchRelationIDsAndTypes(dbmd,
+                                                                                            schema,
+                                                                                            incl_tables,
+                                                                                            incl_views);
+
+        if (incl_fields)
+        {
+            for (RelationMetaData rel_md : fetchRelationMetaDatas(included_rel_ids_and_types, schema, dbmd))
+                rels_el.appendChild(makeFullRelationElement(rel_md, doc));
+        }
+        else
+        {
+            for (Map.Entry<RelationID, RelationType> rid_rtype : included_rel_ids_and_types.entrySet())
+                rels_el.appendChild(makeChildlessRelationElement(rid_rtype.getKey(), rid_rtype.getValue(), doc));
+        }
+
+        // Foreign Key Links
+        if (incl_fks)
+        {
+            Element fk_links_el = (Element)root_el.appendChild(doc.createElement("foreign-key-links"));
+
+            for (FkLink fkl : fetchForeignKeyLinks(schema, dbmd))
+                fk_links_el.appendChild(makeForeignKeyLinkElement(fkl, doc));
+        }
+
+        return doc;
+    }
+    
+    protected Element makeChildlessRelationElement(RelationID rel_id, RelationType rel_type, Document doc)
+    {
+        Element rel_el = doc.createElement("relation");
+        
+        rel_el.setAttribute("type", rel_type.toString().toLowerCase());
+        
+        rel_el.setAttribute("name", rel_id.name());
+                
+        if ( rel_id.schema() != null )
+            rel_el.setAttribute("schema", rel_id.schema());
+                
+        if ( rel_id.catalog() != null )
+            rel_el.setAttribute("catalog", rel_id.catalog());
+                
+        rel_el.setAttribute("id", "r:" + rel_id.id());
+        
+        return rel_el;
+    }
+    
+    
+    protected Element makeFullRelationElement(RelationMetaData rel_md, Document doc)
+    {
+        Element rel_el = makeChildlessRelationElement(rel_md.relationID(), rel_md.relationType(), doc);
+        
+        for(Field f: rel_md.fields())
+            rel_el.appendChild(makeFieldElement(f, doc));
+        
+        return rel_el;
+    }
+    
+    protected Element makeFieldElement(Field f, Document doc)
+    {
+        Element field_el = doc.createElement("field");
+        
+        field_el.setAttribute("name", f.name());
+        
+        RelationID rel_id = f.relationID();
+        field_el.setAttribute("id", "f:" + rel_id.id() + "." + f.name().toLowerCase());
+
+        Element type_el = doc.createElement("type");
+        
+        appendChildWithText(doc, type_el, "database-type", f.dbTypeName());
+        appendChildWithText(doc, type_el, "jdbc-type-code", String.valueOf(f.jdbcTypeCode())); 
+        appendChildWithText(doc, type_el, "jdbc-type-text", DBMetaData.jdbcTypeToString(f.jdbcTypeCode())); 
+        if ( f.length() != null )
+            appendChildWithText(doc, type_el, "max-chars", String.valueOf(f.length()));
+        if ( f.precision() != null )
+            appendChildWithText(doc, type_el, "precision", String.valueOf(f.precision()));
+        if ( f.fractionalDigits() != null )
+            appendChildWithText(doc, type_el, "scale", String.valueOf(f.fractionalDigits()));
+        if ( f.radix() != null )
+            appendChildWithText(doc, type_el, "radix", String.valueOf(f.radix()));
+        if ( f.comment() != null )
+            appendChildWithText(doc, type_el, "comment", String.valueOf(f.comment()));
+        
+        field_el.appendChild(type_el);
+        
+        appendChildWithText(doc, field_el, "nullable", (f.isNullable() == null ? "unknown" : f.isNullable().toString()));
+        
+        if ( f.pkPartNum() != null )
+            appendChildWithText(doc, field_el, "primary-key-part", String.valueOf(f.pkPartNum()));
+        
+        return field_el;
+    }
+    
+    
+    protected Element makeForeignKeyLinkElement(FkLink l, Document doc)
+    {
+        Element link_el = doc.createElement("link");
+       
+        Element src_rel_el = (Element)link_el.appendChild(doc.createElement("referencing-relation"));
+
+        src_rel_el.setAttribute("name", l.srcRel().name());
+
+        if (l.srcRel().schema() != null)
+            src_rel_el.setAttribute("schema", l.srcRel().schema());
+
+        if (l.srcRel().catalog() != null)
+            src_rel_el.setAttribute("catalog", l.srcRel().catalog());
+
+        
+        Element tgt_rel_el = (Element)link_el.appendChild(doc.createElement("referenced-relation"));
+        
+        tgt_rel_el.setAttribute("name", l.tgtRel().name());
+
+        if (l.tgtRel().schema() != null)
+            tgt_rel_el.setAttribute("schema", l.tgtRel().schema());
+
+        if (l.tgtRel().catalog() != null)
+            tgt_rel_el.setAttribute("catalog", l.tgtRel().catalog());
+        
+
+        for(FkComp comp: l.fkComps())
+        {
+            Element match_el = (Element)link_el.appendChild(doc.createElement("match"));
+            match_el.setAttribute("fk-field", comp.fkFieldName());
+            match_el.setAttribute("pk-field", comp.pkFieldName());
+        }
+
+       return link_el;
+    }
+    
+    
+    
+    public Map<RelationID,RelationType> fetchRelationIDsAndTypes(Connection conn,
+                                                                 String schema,
+                                                                 boolean incl_tables,
+                                                                 boolean incl_views) throws SQLException
     {
         return fetchRelationIDsAndTypes(conn.getMetaData(),
                                         schema,
@@ -54,10 +212,10 @@ public class DBMetaData {
                                         incl_views);
     }
     
-    public static Map<RelationID,RelationType> fetchRelationIDsAndTypes(DatabaseMetaData dbmd,
-                                                                        String schema,
-                                                                        boolean incl_tables,
-                                                                        boolean incl_views) throws SQLException
+    public Map<RelationID,RelationType> fetchRelationIDsAndTypes(DatabaseMetaData dbmd,
+                                                                 String schema,
+                                                                 boolean incl_tables,
+                                                                 boolean incl_views) throws SQLException
     {
         Map<RelationID,RelationType> relid_to_reltype = new HashMap<RelationID,RelationType>();
         
@@ -83,7 +241,7 @@ public class DBMetaData {
         return relid_to_reltype;
     }
     
-    public static List<RelationMetaData> fetchRelationMetaDatas(Map<RelationID,RelationType> include_rel_ids_and_types, // relids to include and their types
+    public List<RelationMetaData> fetchRelationMetaDatas(Map<RelationID,RelationType> include_rel_ids_and_types, // relids to include and their types
                                                                 String schema,
                                                                 Connection conn) throws SQLException
     {
@@ -92,7 +250,7 @@ public class DBMetaData {
                                       conn.getMetaData());
     }
     
-    public static List<RelationMetaData> fetchRelationMetaDatas(Map<RelationID,RelationType> include_rel_ids_and_types, // relids to include and their types
+    public List<RelationMetaData> fetchRelationMetaDatas(Map<RelationID,RelationType> include_rel_ids_and_types, // relids to include and their types
                                                                 String schema,
                                                                 DatabaseMetaData dbmd) throws SQLException
     {
@@ -151,12 +309,12 @@ public class DBMetaData {
         }
     }
     
-    public static List<FkLink> fetchForeignKeyLinks(String schema, Connection conn) throws SQLException
+    public List<FkLink> fetchForeignKeyLinks(String schema, Connection conn) throws SQLException
     {
         return fetchForeignKeyLinks(schema, conn.getMetaData());
     }
     
-    public static List<FkLink> fetchForeignKeyLinks(String schema, DatabaseMetaData dbmd) throws SQLException
+    public List<FkLink> fetchForeignKeyLinks(String schema, DatabaseMetaData dbmd) throws SQLException
     {
         List<FkLink> links = new ArrayList<FkLink>();
 
@@ -202,7 +360,7 @@ public class DBMetaData {
     }
 
     
-    protected static Field makeField(ResultSet cols_rs, DatabaseMetaData dbmd) throws SQLException
+    protected Field makeField(ResultSet cols_rs, DatabaseMetaData dbmd) throws SQLException
     {
         ResultSet pk_rs = null;
 
@@ -240,12 +398,12 @@ public class DBMetaData {
         }
     }
     
-    public static CaseSensitivity getDbCaseSensitivity(Connection conn) throws SQLException
+    public CaseSensitivity getDbCaseSensitivity(Connection conn) throws SQLException
     {
         return getDbCaseSensitivity(conn.getMetaData());
     }
     
-    public static CaseSensitivity getDbCaseSensitivity(DatabaseMetaData dbmd) throws SQLException
+    public CaseSensitivity getDbCaseSensitivity(DatabaseMetaData dbmd) throws SQLException
     {
         if ( dbmd.storesLowerCaseIdentifiers() )
             return CaseSensitivity.INSENSITIVE_STORED_LOWER;
@@ -257,7 +415,7 @@ public class DBMetaData {
             return CaseSensitivity.SENSITIVE;
     }
     
-    public static String normalizeDatabaseIdentifier(String id, CaseSensitivity case_sens)
+    public String normalizeDatabaseIdentifier(String id, CaseSensitivity case_sens)
     {
         if (id.equals(""))
             return null;
@@ -271,7 +429,14 @@ public class DBMetaData {
             return id;
     }
     
-    public static Integer getInteger(ResultSet rs, int cnum) throws SQLException
+    protected static void appendChildWithText(Document doc, Node node, String child_name, String child_text)
+    {
+        Element child = doc.createElement(child_name);
+        child.setTextContent(child_text);
+        node.appendChild(child);
+    }
+    
+    protected static Integer getInteger(ResultSet rs, int cnum) throws SQLException
     {
         int i = rs.getInt(cnum);
         if (rs.wasNull())

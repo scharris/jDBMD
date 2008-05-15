@@ -3,8 +3,8 @@ db-metadata: provides a simple java library and NetKernel module for fetching da
 As a Java Library: 
 ========================
   The db-metadata.jar archive may be used as a simple Java library for fetching metadata information for a 
-database schema.  Use the static methods of class DBMetaData in package com.github.scharris.db_metadata, 
-for fetching metadata information about tables, views, fields and foreign key links in a given schema.
+database schema.  Use class com.github.scharris.db_metadata.DBMetaData to fetch metadata information about
+tables, views, fields and foreign key links in a given schema.
 
 
 As a NetKernel module:
@@ -16,7 +16,7 @@ The metadata is returned in the following form:
 
 <database-metadata  schema="..." identifiers-case-sensitivity="...">
     <relations>
-      <table|view id="..." name="..." schema="...">
+      <relation type="..." id="..." name="..." schema="...">
         <field id="..." name="...">
           <type>
             <database-type/>
@@ -31,7 +31,7 @@ The metadata is returned in the following form:
           [<primary-key-part/>]
         </field>
         ...
-      </table|view>   
+      </relation>   
       ...
     </relations>
         
