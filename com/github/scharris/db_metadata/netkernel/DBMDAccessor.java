@@ -71,7 +71,9 @@ public class DBMDAccessor extends NKFAccessorImpl {
     {
         INKFRequestReadOnly req = context.getThisRequest();
 
-        String schema = ((IAspectString)context.sourceAspect("this:param:schema", IAspectString.class)).getString();
+        String schema_arg = req.getArgument("schema");
+        String schema = schema_arg != null && schema_arg.indexOf(':') == -1 ? schema_arg
+            : ((IAspectString)context.sourceAspect("this:param:schema", IAspectString.class)).getString();
         
         Connection conn = null;
         
@@ -98,10 +100,11 @@ public class DBMDAccessor extends NKFAccessorImpl {
             
             Node rels_el = root_el.appendChild(doc.createElement("relations"));
             
-            Map<RelationID,RelationType> included_rel_ids_and_types = DBMetaData.fetchRelationIDsAndTypes(dbmd, 
-                                                                                                          schema,
-                                                                                                          getOption("tables", context, true),
-                                                                                                          getOption("views",  context, false));
+            Map<RelationID,RelationType> included_rel_ids_and_types = 
+                DBMetaData.fetchRelationIDsAndTypes(dbmd, 
+                                                    schema,
+                                                    getOption("tables", context, true),
+                                                    getOption("views",  context, false));
             
             if ( getOption("fields", context, false) ) // include fields?
             {
@@ -207,7 +210,7 @@ public class DBMDAccessor extends NKFAccessorImpl {
         
         field_el.appendChild(type_el);
         
-        appendChildWithText(doc, field_el, "nullable", (f.isNullable() == null ? "unknown" : String.valueOf(f.isNullable())));
+        appendChildWithText(doc, field_el, "nullable", (f.isNullable() == null ? "unknown" : f.isNullable().toString()));
         
         if ( f.pkPartNum() != null )
             appendChildWithText(doc, field_el, "primary-key-part", String.valueOf(f.pkPartNum()));
@@ -266,14 +269,23 @@ public class DBMDAccessor extends NKFAccessorImpl {
     {
         if ( context.getThisRequest().argumentExists(option) )
         {
-            String optval_str = ((IAspectString)context.sourceAspect("this:param:" + option, 
-                                                                     IAspectString.class)).getString().toLowerCase();
+            // Check for a simple non-uri parameter value as a convenience
+            String arg_lower = context.getThisRequest().getArgument(option).toLowerCase();
 
-            if ( optval_str.startsWith("y") ||
-                 optval_str.startsWith("t") )
+            if ( arg_lower.equals("y") || arg_lower.equals("yes") || arg_lower.equals("t") || arg_lower.equals("true") )
                 return true;
-            else
+            else if ( arg_lower.equals("n") || arg_lower.equals("no") || arg_lower.equals("f") || arg_lower.equals("false") )
                 return false;
+            else
+            {    
+                String optval_str = ((IAspectString)context.sourceAspect("this:param:" + option, 
+                                                                         IAspectString.class)).getString().toLowerCase();
+
+                if ( optval_str.equals("y") || optval_str.equals("yes") || optval_str.equals("t") || optval_str.equals("true") )
+                    return true;
+                else
+                    return false;
+            }
         }
         else
             return def;

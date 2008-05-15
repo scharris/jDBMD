@@ -50,26 +50,18 @@ The metadata is returned in the following form:
 
 Arguments for active:db-metadata requests in NetKernel
 ------------------------------------------------------
-All arguments must be full uri's which when sourced yield the requested plain text content.
-For literal text, use a uri of the form "data:text/plain,<your literal text>".
-This makes entering literal arguments slightly more verbose, but provides increased
-flexibility since the arguments can easily be sourced from any uri without programming.
+   +schema: either a direct schema name (not containing a ':'), or a uri which when sourced should return the schema name.
+            To enter a schema name containing a ':', use the "data:" scheme, e.g. "data:text/plain,ACCOUNTING".
 
-   +schema: a uri which when sourced should return the schema name.  E.g. "data:text/plain,ACCOUNTING"
+   +views: whether to include views. Valid values are y/yes/n/no/t/true/f/false or else a uri yielding one of these values.
 
-   +views: whether to include views, as a uri yielding "y" or "n", e.g. "data:text/plain,y"
+   +fields: whether to include field metadata within table and view elements.  Values as described for the views argument.
 
-   +fields: whether to include field metadata within table and view elements, as a uri yielding "y" or "n".
+   +fks: whether to include metadata describing foreign key links in the schema.  Values as described for the views argument.
 
-   +fks: whether to include metadata describing foreign key links in the schema, as a uri yielding "y" or "n".
+Example uri:
 
-Example uri (on multiple lines for clarity):
-
-  active:db-metadata
-        +schema@text/plain,myschema
-        +views@ffcpl:/etc/include-views
-        +fields@data:text/plain,y
-        +fks@data:text/plain,y
+  active:db-metadata+schema@myschema+views@ffcpl:/etc/include-views+fields@y+fks@y
 
 
 NetKernel Module Installation:
