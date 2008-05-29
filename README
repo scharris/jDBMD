@@ -70,7 +70,7 @@ Example uri:
 
 
 NetKernel Module Installation:
-==============================
+------------------------------
 
   1) Copy the included db-metadata.jar file into your {NetKernel-Home}/modules directory, 
      or wherever else you'd like to keep it.
