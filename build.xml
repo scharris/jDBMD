@@ -17,7 +17,7 @@
   </target>
 
   <!-- makejar -->
-  <target name="makejar"
+  <target name="jar"
 		  depends="clean, compile"
 		  description="generate module jar file">
 	<jar jarfile="db-metadata.jar" basedir="." includes="**/*" excludes="db-metadata.jar" />
@@ -25,7 +25,7 @@
 
 
   <!-- publish -->
-  <target name="publish" depends="makejar">
+  <target name="publish" depends="jar">
 	<copy file="db-metadata.jar" todir="${nk.home}/modules/" overwrite="true"/>
   </target>
 

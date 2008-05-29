@@ -81,3 +81,23 @@ NetKernel Module Installation:
       <import><uri>urn:com:github:scharris:db-metadata</uri></import>
 
 Requests, suggestions and comments are welcome.  Send to steveOfAR at domain gmail.com.
+
+
+As a Standalone Program
+=======================
+The DBMetaData class includes a main method which can write database metadata as xml to an output file.
+To do this, first create a properties file describing the database connnection information, with properties:
+jdbc-connect-url, jdbc-driver-class, user, and password.
+
+For example,
+#file connection.props
+jdbc-connect-url=jdbc:oracle:thin:@myhost.mydomain.org:1528:mysid
+jdbc-driver-class=oracle.jdbc.OracleDriver
+user=mydbuser
+password=mypassword
+
+Then invoke the command like this:
+
+  java -cp db-metadata.jar:ojdbc14.jar com.github.scharris.db_metadata.DBMetaData myschema connection.props myschema.xml
+
+which would write the database metadata for schema myschema to file myschema.xml.

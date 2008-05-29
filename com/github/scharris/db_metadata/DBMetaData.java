@@ -31,9 +31,14 @@
 package com.github.scharris.db_metadata;
 
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.sql.*;
 import java.util.*;
 import org.w3c.dom.*;
+import org.w3c.dom.ls.*;
 import javax.xml.parsers.*;
 
 import com.github.scharris.db_metadata.RelationMetaData.RelationType;
@@ -242,8 +247,8 @@ public class DBMetaData {
     }
     
     public List<RelationMetaData> fetchRelationMetaDatas(Map<RelationID,RelationType> include_rel_ids_and_types, // relids to include and their types
-                                                                String schema,
-                                                                Connection conn) throws SQLException
+                                                         String schema,
+                                                         Connection conn) throws SQLException
     {
         return fetchRelationMetaDatas(include_rel_ids_and_types,
                                       schema,
@@ -251,8 +256,8 @@ public class DBMetaData {
     }
     
     public List<RelationMetaData> fetchRelationMetaDatas(Map<RelationID,RelationType> include_rel_ids_and_types, // relids to include and their types
-                                                                String schema,
-                                                                DatabaseMetaData dbmd) throws SQLException
+                                                         String schema,
+                                                         DatabaseMetaData dbmd) throws SQLException
     {
         ResultSet pk_rs = null;
         ResultSet cols_rs = null;
@@ -544,6 +549,77 @@ public class DBMetaData {
         }
         return "unknown[" + jdbc_type + "]";
     }
+
+    
+	public static void main(String[] args) // schema connection-properties-file output-file 
+	{
+	    if ( args.length < 3 )
+	    {
+	        System.err.println("Expected arguments: schema connection-properties-file output-file");
+	        System.exit(1);
+	    }
+	    
+	    int arg_ix = 0;
+	    String schema = args[arg_ix++];
+	    String props_file_path = args[arg_ix++];
+	    String output_file_path = args[arg_ix++];
+
+	    Properties props = new Properties();
+	    
+	    Connection conn = null;
+	    
+	    try
+	    {
+	        props.load(new FileInputStream(props_file_path));
+	        
+	        System.out.println(props);
+	        
+	        String conn_str = props.getProperty("jdbc-connect-url");
+	        String driver_classname = props.getProperty("jdbc-driver-class");
+            String user = props.getProperty("user");
+            String password = props.getProperty("password");
+	        
+            if ( conn_str == null )
+                throw new IllegalArgumentException("No jdbc-connect-url property found in config file.");
+            if ( driver_classname == null )
+                throw new IllegalArgumentException("No jdbc-driver-class property found in config file.");
+            if ( user == null )
+                throw new IllegalArgumentException("No user property found in config file.");
+            if ( password == null )
+                throw new IllegalArgumentException("No password property found in config file.");
+	        
+            
+            Class.forName(driver_classname);
+	        conn = DriverManager.getConnection(conn_str, user, password);
+	        
+	        DBMetaData dbmd = new DBMetaData();
+	        
+	        Document doc = dbmd.createMetaDataDOM(conn.getMetaData(), schema, true, true, true, true);
+	        
+	        dbmd.writeDocument(doc, new File(output_file_path));
+	        
+	        System.exit(0);
+	    }
+	    catch(Exception e)
+	    {
+	        System.err.println("Error: " + e.getMessage());
+	        System.exit(2);
+	    }
+	}
+
+	
+	public void writeDocument(Document doc, File out_file) throws FileNotFoundException 
+	{
+	    DOMImplementationLS dom_impl_ls = (DOMImplementationLS)doc.getImplementation().getFeature("LS", "3.0");
+	    
+	    LSSerializer ls_ser = dom_impl_ls.createLSSerializer();
+
+	    LSOutput ls_out = dom_impl_ls.createLSOutput();
+	    ls_out.setByteStream(new FileOutputStream(out_file));
+
+	    ls_ser.write(doc, ls_out);
+	}
+
 
 }
 
