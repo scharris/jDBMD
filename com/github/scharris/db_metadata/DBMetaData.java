@@ -572,8 +572,6 @@ public class DBMetaData {
 	    {
 	        props.load(new FileInputStream(props_file_path));
 	        
-	        System.out.println(props);
-	        
 	        String conn_str = props.getProperty("jdbc-connect-url");
 	        String driver_classname = props.getProperty("jdbc-driver-class");
             String user = props.getProperty("user");
