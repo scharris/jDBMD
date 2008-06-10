@@ -12,8 +12,8 @@
   </info>
   
   <licence>
-    <name>BSD3</name>
-    <uri>ffcpl:/COPYING</uri> <!-- http://www.opensource.org/licenses/bsd-license.php -->
+    <name>BSD3 - See COPYING within module</name>
+    <uri>http://www.opensource.org/licenses/bsd-license.php</uri>
   </licence>
   
   <export>
@@ -23,17 +23,12 @@
     </uri>
   </export>
   
-
-  <rewrite>
-  </rewrite>
-
   
   <mapping>
     
     <this>
       <match>ffcpl:/resources/.*</match>
       <match>ffcpl:/entrypoints.xml</match>
-	  <match>ffcpl:/COPYING</match>
     </this>
 
     <ura>
