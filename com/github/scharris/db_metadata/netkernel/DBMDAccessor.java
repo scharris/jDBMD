@@ -81,7 +81,7 @@ public class DBMDAccessor extends NKFAccessorImpl {
                                                                 schema,
                                                                 getOption("tables", context, true),
                                                                 getOption("views",  context, false),
-                                                                getOption("fields", context, false),
+                                                                getOption("fields", context, true),
                                                                 getOption("fks", context, false));
             
 
