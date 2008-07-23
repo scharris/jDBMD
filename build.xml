@@ -20,7 +20,7 @@
   <target name="jar"
 		  depends="clean, compile"
 		  description="generate module jar file">
-	<jar jarfile="db-metadata.jar" basedir="." includes="**/*" excludes="db-metadata.jar" />
+	<jar jarfile="db-metadata.jar" basedir="." includes="**/*" excludes="db-metadata.jar,.git/" />
   </target>
 
 
