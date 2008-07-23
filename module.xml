@@ -44,7 +44,7 @@
       <class>com.github.scharris.db_metadata.netkernel.DBMDAccessor</class>
     </ura>
 
-    <import>
+	<import>
       <uri>urn:org:ten60:netkernel:ext:layer1</uri>
     </import>
     <import>
@@ -56,6 +56,9 @@
     <import>
       <uri>urn:org:ten60:netkernel:ext:xml:ura</uri>
     </import>
+	<import>
+	  <uri>urn:org:ten60:netkernel:ext:xquery</uri>
+	</import>
     <import>
       <uri>urn:org:ten60:netkernel:ext:sys</uri>
     </import>
