@@ -16,7 +16,7 @@
     </javac>
   </target>
 
-  <!-- makejar -->
+  <!-- jar -->
   <target name="jar"
 		  depends="clean, compile"
 		  description="generate module jar file">
