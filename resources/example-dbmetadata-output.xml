@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<database-metadata identifiers-case-sensitivity="insensitive_stored_upper" schema="SHARRIS">
+  <relations>
+	<relation id="r:sharris.submission" name="SUBMISSION" schema="SHARRIS" type="table">
+	  <field id="f:sharris.submission.subm_id" name="SUBM_ID">
+		<type>
+		  <database-type>NUMBER</database-type>
+		  <jdbc-type-code>3</jdbc-type-code>
+		  <jdbc-type-text>DECIMAL</jdbc-type-text>
+		  <precision>10</precision>
+		  <scale>0</scale>
+		  <radix>10</radix>
+		</type>
+		<nullable>false</nullable>
+		<primary-key-part>1</primary-key-part>
+	  </field>
+	  <field id="f:sharris.submission.subm_id_external" name="SUBM_ID_EXTERNAL">
+		<type>
+		  <database-type>VARCHAR2</database-type>
+		  <jdbc-type-code>12</jdbc-type-code>
+		  <jdbc-type-text>VARCHAR</jdbc-type-text>
+		  <max-chars>4000</max-chars>
+		</type>
+		<nullable>true</nullable>
+	  </field>
+	</relation>
+  </relations>
+</database-metadata>

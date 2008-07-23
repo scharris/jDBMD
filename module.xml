@@ -19,7 +19,7 @@
   <export>
     <uri>
       <match>active:db-metadata\+.*</match>
-	  <match>active:db-metadata:.*</match>
+      <match>active:db-metadata:.*</match>
       <match>ffcpl:/entrypoints.xml</match>
     </uri>
   </export>
@@ -29,15 +29,15 @@
     
     <this>
       <match>ffcpl:/resources/.*</match>
-	  <match>ffcpl:/com/github/scharris/db_metadata/netkernel/extract-relation.idoc</match>
-	  <match>ffcpl:/com/github/scharris/db_metadata/netkernel/extract-relation.xslt</match>
+      <match>ffcpl:/com/github/scharris/db_metadata/netkernel/extract-relation.idoc</match>
+      <match>ffcpl:/com/github/scharris/db_metadata/netkernel/extract-relation.xslt</match>
       <match>ffcpl:/entrypoints.xml</match>
     </this>
 
-	<rewrite>
-	  <match>active:db-metadata:relation(\+.*)</match> <!-- +name (qualified or unqualified), +db-metadata -->
-	  <to>active:dpml+operand@ffcpl:/com/github/scharris/db_metadata/netkernel/extract-relation.idoc$1</to>
-	</rewrite>
+    <rewrite>
+      <match>active:db-metadata:relation(\+.*)</match> <!-- +name (qualified or unqualified), +db-metadata -->
+      <to>active:dpml+operand@ffcpl:/com/github/scharris/db_metadata/netkernel/extract-relation.idoc$1</to>
+    </rewrite>
 
     <ura>
       <match>active:db-metadata\+.*</match>
@@ -59,7 +59,7 @@
     <import>
       <uri>urn:org:ten60:netkernel:ext:sys</uri>
     </import>
-	<import>
+    <import>
       <uri>urn:org:ten60:netkernel:ext:dpml</uri>
     </import>
     
