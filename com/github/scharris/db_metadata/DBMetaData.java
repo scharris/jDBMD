@@ -48,11 +48,17 @@ public class DBMetaData {
     
     public enum CaseSensitivity { INSENSITIVE_STORED_LOWER, INSENSITIVE_STORED_UPPER, INSENSITIVE_STORED_MIXED, SENSITIVE }
     
+    private boolean allDatesAreTimeStamps;
+    
     
     public DBMetaData()
     {
     }
     
+    public void setAllDatesAreTimeStamps(boolean perverse_oracle_driver_detected)
+    {
+        allDatesAreTimeStamps = perverse_oracle_driver_detected;
+    }
     
     public Document createMetaDataDOM(DatabaseMetaData dbmd,
                                       String schema,
@@ -380,6 +386,11 @@ public class DBMetaData {
 
             String name = cols_rs.getString(4);
             int type_code = getInteger(cols_rs, 5);
+            /* Watch out for Oracle drivers, which report oracle DATE columns as SQL Date columns, when they are 
+               really SQL Timestamps.  Considering the column as a SQL Date would cause a failure if e.g. an attempt is made
+               to insert a {d YYYY-mm-dd} standard jdbc escaped SQL Date value into the column. */ 
+            if ( type_code == Types.DATE && allDatesAreTimeStamps ) 
+                type_code = Types.TIMESTAMP;
             int size = getInteger(cols_rs, 7);
             int nullable = getInteger(cols_rs, 11);
             

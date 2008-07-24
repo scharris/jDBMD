@@ -77,13 +77,16 @@ public class DBMDAccessor extends NKFAccessorImpl {
         {
             conn = connPool.acquireConnection();
             
-            Document doc = (new DBMetaData()).createMetaDataDOM(conn.getMetaData(),
-                                                                schema,
-                                                                getOption("tables", context, true),
-                                                                getOption("views",  context, false),
-                                                                getOption("fields", context, true),
-                                                                getOption("fks", context, false));
+            DBMetaData dbmd = new DBMetaData();
+            dbmd.setAllDatesAreTimeStamps(conn.getClass().getName().startsWith("oracle."));
             
+            Document doc = dbmd.createMetaDataDOM(conn.getMetaData(),
+                                                  schema,
+                                                  getOption("tables", context, true),
+                                                  getOption("views",  context, false),
+                                                  getOption("fields", context, true),
+                                                  getOption("fks", context, false));
+                
 
             DOMXDAAspect domxda_aspect = new DOMXDAAspect(new DOMXDA(doc));
             
