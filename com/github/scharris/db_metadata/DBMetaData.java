@@ -185,7 +185,7 @@ public class DBMetaData {
         if ( f.pkPartNum() != null )
             appendChildWithText(doc, field_el, "primary-key-part", String.valueOf(f.pkPartNum()));
 
-		if ( f.comment() != null )
+        if ( f.comment() != null )
             appendChildWithText(doc, field_el, "comment", f.comment());
         
         return field_el;
@@ -593,32 +593,32 @@ public class DBMetaData {
     }
 
     
-	public static void main(String[] args) // schema connection-properties-file output-file 
-	{
-	    if ( args.length < 3 )
-	    {
-	        System.err.println("Expected arguments: schema connection-properties-file output-file");
-	        System.exit(1);
-	    }
-	    
-	    int arg_ix = 0;
-	    String schema = args[arg_ix++];
-	    String props_file_path = args[arg_ix++];
-	    String output_file_path = args[arg_ix++];
+    public static void main(String[] args) // schema connection-properties-file output-file 
+    {
+        if ( args.length < 3 )
+        {
+            System.err.println("Expected arguments: schema connection-properties-file output-file");
+            System.exit(1);
+        }
+        
+        int arg_ix = 0;
+        String schema = args[arg_ix++];
+        String props_file_path = args[arg_ix++];
+        String output_file_path = args[arg_ix++];
 
-	    Properties props = new Properties();
-	    
-	    Connection conn = null;
-	    
-	    try
-	    {
-	        props.load(new FileInputStream(props_file_path));
-	        
-	        String conn_str = props.getProperty("jdbc-connect-url");
-	        String driver_classname = props.getProperty("jdbc-driver-class");
+        Properties props = new Properties();
+        
+        Connection conn = null;
+        
+        try
+        {
+            props.load(new FileInputStream(props_file_path));
+            
+            String conn_str = props.getProperty("jdbc-connect-url");
+            String driver_classname = props.getProperty("jdbc-driver-class");
             String user = props.getProperty("user");
             String password = props.getProperty("password");
-	        
+            
             if ( conn_str == null )
                 throw new IllegalArgumentException("No jdbc-connect-url property found in config file.");
             if ( driver_classname == null )
@@ -627,48 +627,48 @@ public class DBMetaData {
                 throw new IllegalArgumentException("No user property found in config file.");
             if ( password == null )
                 throw new IllegalArgumentException("No password property found in config file.");
-	        
+            
             
             Class.forName(driver_classname);
-	        conn = DriverManager.getConnection(conn_str, user, password);
-	        
-	        DBMetaData dbmd = new DBMetaData();
-	        
-	        Document doc = dbmd.createMetaDataDOM(conn.getMetaData(), schema, true, true, true, true);
-	        
-	        dbmd.writeDocument(doc, new File(output_file_path));
-	        
-	        System.exit(0);
-	    }
-	    catch(Exception e)
-	    {
-	        System.err.println("Error: " + e.getMessage());
-	        System.exit(2);
-	    }
-	}
+            conn = DriverManager.getConnection(conn_str, user, password);
+            
+            DBMetaData dbmd = new DBMetaData();
+            
+            Document doc = dbmd.createMetaDataDOM(conn.getMetaData(), schema, true, true, true, true);
+            
+            dbmd.writeDocument(doc, new File(output_file_path));
+            
+            System.exit(0);
+        }
+        catch(Exception e)
+        {
+            System.err.println("Error: " + e.getMessage());
+            System.exit(2);
+        }
+    }
 
-	
-	public void writeDocument(Document doc, File out_file) throws FileNotFoundException 
-	{
-	    DOMImplementationLS dom_impl_ls = (DOMImplementationLS)doc.getImplementation().getFeature("LS", "3.0");
-	    
-	    LSSerializer ls_ser = dom_impl_ls.createLSSerializer();
-
-	    LSOutput ls_out = dom_impl_ls.createLSOutput();
-	    ls_out.setByteStream(new FileOutputStream(out_file));
-
-	    ls_ser.write(doc, ls_out);
-	}
-
-	
-	static class RelationDescription {
     
-	    private RelationID relId;
-	    private RelationType relType;
-	    private String relComment;
+    public void writeDocument(Document doc, File out_file) throws FileNotFoundException 
+    {
+        DOMImplementationLS dom_impl_ls = (DOMImplementationLS)doc.getImplementation().getFeature("LS", "3.0");
+        
+        LSSerializer ls_ser = dom_impl_ls.createLSSerializer();
+
+        LSOutput ls_out = dom_impl_ls.createLSOutput();
+        ls_out.setByteStream(new FileOutputStream(out_file));
+
+        ls_ser.write(doc, ls_out);
+    }
+
     
-	    public RelationDescription(RelationID relId, RelationType relType, String relComment)
-	    {
+    static class RelationDescription {
+    
+        private RelationID relId;
+        private RelationType relType;
+        private String relComment;
+    
+        public RelationDescription(RelationID relId, RelationType relType, String relComment)
+        {
             super();
             this.relId = relId;
             this.relType = relType;
@@ -689,7 +689,7 @@ public class DBMetaData {
         {
             return relComment;
         }
-	}
+    }
 
 }
 
