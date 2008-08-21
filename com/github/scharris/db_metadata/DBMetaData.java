@@ -43,6 +43,15 @@ import javax.xml.parsers.*;
 
 import com.github.scharris.db_metadata.RelationMetaData.RelationType;
 
+/* Notes
+ *  Oracle idiosyncrasies:
+ *     - For Oracle 9 and 10 drivers, pass true for perverse_oracle_driver so that Oracle DATE columns are 
+ *       treated as SQL TimeStamps.  Failing to do this will cause errors for programs that take this metadata
+ *       seriously.  E.g. attempts to use {d yyyy-mm-dd} syntax for setting the field values will fail.
+ *     - Oracle will not include comments in metadata by default.  To enable comment reporting, set the remarksReporting
+ *       connection property to true.  
+ */
+
 
 public class DBMetaData {
     
@@ -55,9 +64,9 @@ public class DBMetaData {
     {
     }
     
-    public void setAllDatesAreTimeStamps(boolean perverse_oracle_driver_detected)
+    public void setAllDatesAreTimeStamps(boolean perverse_oracle_driver)
     {
-        allDatesAreTimeStamps = perverse_oracle_driver_detected;
+        allDatesAreTimeStamps = perverse_oracle_driver;
     }
     
     public Document createMetaDataDOM(DatabaseMetaData dbmd,
@@ -80,20 +89,20 @@ public class DBMetaData {
 
         Node rels_el = root_el.appendChild(doc.createElement("relations"));
 
-        Map<RelationID, RelationType> included_rel_ids_and_types = fetchRelationIDsAndTypes(dbmd,
-                                                                                            schema,
-                                                                                            incl_tables,
-                                                                                            incl_views);
+        List<RelationDescription> rel_descrs = fetchRelationDescriptions(dbmd, schema, incl_tables, incl_views);
 
         if (incl_fields)
         {
-            for (RelationMetaData rel_md : fetchRelationMetaDatas(included_rel_ids_and_types, schema, dbmd))
+            for (RelationMetaData rel_md : fetchRelationMetaDatas(rel_descrs, schema, dbmd))
                 rels_el.appendChild(makeFullRelationElement(rel_md, doc));
         }
         else
         {
-            for (Map.Entry<RelationID, RelationType> rid_rtype : included_rel_ids_and_types.entrySet())
-                rels_el.appendChild(makeChildlessRelationElement(rid_rtype.getKey(), rid_rtype.getValue(), doc));
+            for (RelationDescription rel_descr : rel_descrs)
+                rels_el.appendChild(makeChildlessRelationElement(rel_descr.relationId(),
+                                                                 rel_descr.relationType(),
+                                                                 rel_descr.relationComment(),
+                                                                 doc));
         }
 
         // Foreign Key Links
@@ -108,10 +117,13 @@ public class DBMetaData {
         return doc;
     }
     
-    protected Element makeChildlessRelationElement(RelationID rel_id, RelationType rel_type, Document doc)
+    protected Element makeChildlessRelationElement(RelationID rel_id, 
+                                                   RelationType rel_type,
+                                                   String rel_comment,
+                                                   Document doc)
     {
         Element rel_el = doc.createElement("relation");
-        
+     
         rel_el.setAttribute("type", rel_type.toString().toLowerCase());
         
         rel_el.setAttribute("name", rel_id.name());
@@ -124,13 +136,17 @@ public class DBMetaData {
                 
         rel_el.setAttribute("id", "r:" + rel_id.id());
         
+        if ( rel_comment != null )
+            rel_el.setAttribute("comment", rel_comment);
+        
         return rel_el;
     }
     
     
-    protected Element makeFullRelationElement(RelationMetaData rel_md, Document doc)
+    protected Element makeFullRelationElement(RelationMetaData rel_md, 
+                                              Document doc)
     {
-        Element rel_el = makeChildlessRelationElement(rel_md.relationID(), rel_md.relationType(), doc);
+        Element rel_el = makeChildlessRelationElement(rel_md.relationID(), rel_md.relationType(), rel_md.relationComment(), doc);
         
         for(Field f: rel_md.fields())
             rel_el.appendChild(makeFieldElement(f, doc));
@@ -138,7 +154,8 @@ public class DBMetaData {
         return rel_el;
     }
     
-    protected Element makeFieldElement(Field f, Document doc)
+    protected Element makeFieldElement(Field f,
+                                       Document doc)
     {
         Element field_el = doc.createElement("field");
         
@@ -160,21 +177,23 @@ public class DBMetaData {
             appendChildWithText(doc, type_el, "scale", String.valueOf(f.fractionalDigits()));
         if ( f.radix() != null )
             appendChildWithText(doc, type_el, "radix", String.valueOf(f.radix()));
-        if ( f.comment() != null )
-            appendChildWithText(doc, type_el, "comment", String.valueOf(f.comment()));
         
         field_el.appendChild(type_el);
         
         appendChildWithText(doc, field_el, "nullable", (f.isNullable() == null ? "unknown" : f.isNullable().toString()));
-        
+
         if ( f.pkPartNum() != null )
             appendChildWithText(doc, field_el, "primary-key-part", String.valueOf(f.pkPartNum()));
+
+		if ( f.comment() != null )
+            appendChildWithText(doc, field_el, "comment", f.comment());
         
         return field_el;
     }
     
     
-    protected Element makeForeignKeyLinkElement(FkLink l, Document doc)
+    protected Element makeForeignKeyLinkElement(FkLink l,
+                                                Document doc)
     {
         Element link_el = doc.createElement("link");
        
@@ -188,7 +207,8 @@ public class DBMetaData {
         if (l.srcRel().catalog() != null)
             src_rel_el.setAttribute("catalog", l.srcRel().catalog());
 
-        
+        src_rel_el.setAttribute("rel-id", "r:" + new RelationID(l.srcRel.catalog(), l.srcRel.schema(), l.srcRel.name()).id());
+
         Element tgt_rel_el = (Element)link_el.appendChild(doc.createElement("referenced-relation"));
         
         tgt_rel_el.setAttribute("name", l.tgtRel().name());
@@ -199,6 +219,7 @@ public class DBMetaData {
         if (l.tgtRel().catalog() != null)
             tgt_rel_el.setAttribute("catalog", l.tgtRel().catalog());
         
+        tgt_rel_el.setAttribute("rel-id", "r:" + new RelationID(l.tgtRel.catalog(), l.tgtRel.schema(), l.tgtRel.name()).id());
 
         for(FkComp comp: l.fkComps())
         {
@@ -212,23 +233,23 @@ public class DBMetaData {
     
     
     
-    public Map<RelationID,RelationType> fetchRelationIDsAndTypes(Connection conn,
-                                                                 String schema,
-                                                                 boolean incl_tables,
-                                                                 boolean incl_views) throws SQLException
+    public List<RelationDescription> fetchRelationDescriptions(Connection conn,
+                                                               String schema,
+                                                               boolean incl_tables,
+                                                               boolean incl_views) throws SQLException
     {
-        return fetchRelationIDsAndTypes(conn.getMetaData(),
-                                        schema,
-                                        incl_tables,
-                                        incl_views);
+        return fetchRelationDescriptions(conn.getMetaData(),
+                                         schema,
+                                         incl_tables,
+                                         incl_views);
     }
     
-    public Map<RelationID,RelationType> fetchRelationIDsAndTypes(DatabaseMetaData dbmd,
-                                                                 String schema,
-                                                                 boolean incl_tables,
-                                                                 boolean incl_views) throws SQLException
+    public List<RelationDescription> fetchRelationDescriptions(DatabaseMetaData dbmd,
+                                                               String schema,
+                                                               boolean incl_tables,
+                                                               boolean incl_views) throws SQLException
     {
-        Map<RelationID,RelationType> relid_to_reltype = new HashMap<RelationID,RelationType>();
+        List<RelationDescription> rel_descrs = new ArrayList<RelationDescription>();
         
         Set<String> rel_types = new HashSet<String>();
         if ( incl_tables )
@@ -243,31 +264,34 @@ public class DBMetaData {
 
         while (rs.next())
         {
-            relid_to_reltype.put(new RelationID(rs.getString(1),
-                                                rs.getString(2),
-                                                rs.getString(3)),
-                                 rs.getString(4).toLowerCase().equals("table") ? RelationType.Table : RelationType.View);
+            rel_descrs.add(new RelationDescription(new RelationID(rs.getString(1),rs.getString(2),rs.getString(3)),
+                                                  rs.getString(4).toLowerCase().equals("table") ? RelationType.Table : RelationType.View,
+                                                  rs.getString(5)));
         }
 
-        return relid_to_reltype;
+        return rel_descrs;
     }
     
-    public List<RelationMetaData> fetchRelationMetaDatas(Map<RelationID,RelationType> include_rel_ids_and_types, // relids to include and their types
+    public List<RelationMetaData> fetchRelationMetaDatas(List<RelationDescription> rel_descrs, // descriptions of relations to include
                                                          String schema,
                                                          Connection conn) throws SQLException
     {
-        return fetchRelationMetaDatas(include_rel_ids_and_types,
+        return fetchRelationMetaDatas(rel_descrs,
                                       schema,
                                       conn.getMetaData());
     }
     
-    public List<RelationMetaData> fetchRelationMetaDatas(Map<RelationID,RelationType> include_rel_ids_and_types, // relids to include and their types
+    public List<RelationMetaData> fetchRelationMetaDatas(List<RelationDescription> rel_descrs, // descriptions of relations to include
                                                          String schema,
                                                          DatabaseMetaData dbmd) throws SQLException
     {
         ResultSet pk_rs = null;
         ResultSet cols_rs = null;
 
+        Map<RelationID,RelationDescription> rel_descrs_by_relid = new HashMap<RelationID,RelationDescription>();
+        for(RelationDescription rel_descr: rel_descrs)
+            rel_descrs_by_relid.put(rel_descr.relationId(), rel_descr);
+        
         try
         {
             cols_rs = dbmd.getColumns(null, schema, "%", "%");
@@ -279,9 +303,9 @@ public class DBMetaData {
             {
                 RelationID rel_id = new RelationID(cols_rs.getString(1), cols_rs.getString(2), cols_rs.getString(3));
 
-                RelationType rel_type = include_rel_ids_and_types.get(rel_id);
+                RelationDescription rel_descr = rel_descrs_by_relid.get(rel_id);
                 
-                if ( rel_type != null )
+                if ( rel_descr.relationType() != null )
                 {
                     Field f = makeField(cols_rs, dbmd);
                     
@@ -292,7 +316,10 @@ public class DBMetaData {
                         if ( accum_rel_md != null ) 
                             rel_mds.add(accum_rel_md);
                     
-                        accum_rel_md = new RelationMetaData(rel_id, rel_type, new ArrayList<Field>());
+                        accum_rel_md = new RelationMetaData(rel_id, 
+                                                            rel_descr.relationType(),
+                                                            rel_descr.relationComment(),
+                                                            new ArrayList<Field>());
                     }
                         
                     accum_rel_md.fields().add(f);
@@ -386,11 +413,15 @@ public class DBMetaData {
 
             String name = cols_rs.getString(4);
             int type_code = getInteger(cols_rs, 5);
-            /* Watch out for Oracle drivers, which report oracle DATE columns as SQL Date columns, when they are 
-               really SQL Timestamps.  Considering the column as a SQL Date would cause a failure if e.g. an attempt is made
-               to insert a {d YYYY-mm-dd} standard jdbc escaped SQL Date value into the column. */ 
+            
+            /*  The allDatesAreTimeStamps workaround is for Oracle 9 and 10 drivers (have not tested 11 yet), which report
+             *  oracle DATE columns as SQL Date columns, when they are really SQL Timestamps.  Considering the column as a
+             *  SQL Date would cause a failure if e.g. an attempt is made to insert a {d YYYY-mm-dd} standard jdbc escaped
+             *  SQL Date value into the column. 
+             */ 
             if ( type_code == Types.DATE && allDatesAreTimeStamps ) 
                 type_code = Types.TIMESTAMP;
+            
             int size = getInteger(cols_rs, 7);
             int nullable = getInteger(cols_rs, 11);
             
@@ -629,10 +660,38 @@ public class DBMetaData {
 	    ls_ser.write(doc, ls_out);
 	}
 
+	
+	static class RelationDescription {
+    
+	    private RelationID relId;
+	    private RelationType relType;
+	    private String relComment;
+    
+	    public RelationDescription(RelationID relId, RelationType relType, String relComment)
+	    {
+            super();
+            this.relId = relId;
+            this.relType = relType;
+            this.relComment = relComment;
+        }
+
+        public RelationID relationId()
+        {
+            return relId;
+        }
+
+        public RelationType relationType()
+        {
+            return relType;
+        }
+
+        public String relationComment()
+        {
+            return relComment;
+        }
+	}
 
 }
-
-
 
 
 

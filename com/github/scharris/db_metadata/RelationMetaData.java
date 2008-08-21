@@ -38,18 +38,25 @@ public class RelationMetaData {
     
     RelationID relID;
     RelationType relType;
+    String relComment;
     List<Field> fields;
 
-    public RelationMetaData(RelationID rel_id, RelationType rel_type, List<Field> fs)
+    public RelationMetaData(RelationID rel_id,
+                            RelationType rel_type,
+                            String rel_comment,
+                            List<Field> fs)
     {
         relID = rel_id;
         relType = rel_type;
+        relComment = rel_comment;
         fields = fs;
     }
     
     public RelationID relationID() { return relID; }
 
     public RelationType relationType() { return relType; }
+    
+    public String relationComment() { return relComment; }
     
     public List<Field> fields() { return fields; }
 }

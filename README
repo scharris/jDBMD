@@ -16,7 +16,7 @@ The metadata is returned in the following form:
 
 <database-metadata  schema="..." identifiers-case-sensitivity="...">
     <relations>
-      <relation type="..." id="..." name="..." schema="...">
+      <relation type="..." id="..." name="..." schema="..." comment="...">
         <field id="..." name="...">
           <type>
             <database-type/>
@@ -29,6 +29,7 @@ The metadata is returned in the following form:
           </type>
           <nullable/>
           [<primary-key-part/>]
+		  <comment/>
         </field>
         ...
       </relation>   
@@ -37,8 +38,8 @@ The metadata is returned in the following form:
         
     <foreign-key-links>
       <link>
-        <referencing-relation name="..." schema="..."/>
-        <referenced-relation name="..." schema="..."/>
+        <referencing-relation name="..." rel-id="..." schema="..."/>
+        <referenced-relation name="..." rel-id="..." schema="..."/>
         <match fk-field="..." pk-field="..."/>
         ...
       </link>
