@@ -1,104 +1,27 @@
-db-metadata: provides a simple java library and NetKernel module for fetching database metadata information.
+jDBMD: provides a simple java library for fetching database metadata information, and reading and writing it as XML.
 
 As a Java Library: 
 ==================
-  The db-metadata.jar archive may be used as a simple Java library for fetching metadata information for a 
-database schema.  Use class com.github.scharris.db_metadata.DBMetaData to fetch metadata information about
-tables, views, fields and foreign key links in a given schema.
+  The dbmd.jar archive may be used as a simple Java library for fetching metadata information for a database schema.  Use class gov.fda.nctr.dbmd.DatabaseMetaDataFetcher to fetch metadata information about tables, views, fields and foreign keys in a given schema.  Class DBMD represents the metadata itself and supports reading and writing to and from xml.
 
 
-As a NetKernel module:
-======================
-  The db-metadata.jar is also a valid self-contained NetKernel module which handles active:db-metadata 
-uri requests.  
-
-The metadata is returned in the following form:
-
-<database-metadata  schema="..." identifiers-case-sensitivity="...">
-    <relations>
-      <relation type="..." id="..." name="..." schema="..." comment="...">
-        <field id="..." name="...">
-          <type>
-            <database-type/>
-            <jdbc-type-code/>
-            <jdbc-type-text/>
-            [<max-chars/>]
-            [<precision/>
-             <scale/
-             <radix/>]
-          </type>
-          <nullable/>
-          [<primary-key-part/>]
-		  <comment/>
-        </field>
-        ...
-      </relation>   
-      ...
-    </relations>
-        
-    <foreign-key-links>
-      <link>
-        <referencing-relation name="..." rel-id="..." schema="..."/>
-        <referenced-relation name="..." rel-id="..." schema="..."/>
-        <match fk-field="..." pk-field="..."/>
-        ...
-      </link>
-      ...
-    </foreign-key-links>
-</database-metadata>
-
-
-Arguments for active:db-metadata requests in NetKernel
-------------------------------------------------------
-   +schema: either a direct schema name (not containing a ':'), or a uri which when sourced should return the
-      schema name.  To enter a schema name containing a ':', use the "data:" scheme, e.g. "data:text/plain,ACCOUNTING".
-
-   +views: whether to include views. 
-    Valid values are y/yes/n/no/t/true/f/false or else a uri yielding one of these values.
-
-   +tables: whether to include tables. 
-    Valid values are as described for the views argument.
-
-   +fields: whether to include field metadata within table and view elements.  
-    Valid values are as described for the views argument.
-
-   +fks: whether to include metadata describing foreign key links in the schema.
-    Valid values are as described for the views argument.
-
-Example uri:
-
-  active:db-metadata+schema@myschema+views@ffcpl:/etc/include-views+fields@y+fks@y
-
-
-NetKernel Module Installation:
-------------------------------
-
-  1) Copy the included db-metadata.jar file into your {NetKernel-Home}/modules directory, 
-     or wherever else you'd like to keep it.
-  2) Register the module's location with netkernel by entering its location in 
-     {NetKernel-Home}/etc/deployedModules.xml, e.g. by adding a line like:
-        <module>modules/db-metadata.jar</module>
-  3) import the module into your own client modules:
-      <import><uri>urn:com:github:scharris:db-metadata</uri></import>
-
-Requests, suggestions and comments are welcome.  Send to steveOfAR at domain gmail.com.
+Requests, suggestions and comments are welcome.  Send to gmail user steveOfAR.
 
 
 As a Standalone Program
 =======================
-The DBMetaData class includes a main method which can write database metadata as xml to an output file.
-To do this, first create a properties file describing the database connnection information, with properties:
+The DatabaseMetaDataFetcher class includes a main method which can write database metadata as xml to an output file. To do this, first create a properties file describing the database connnection information, with properties:
 jdbc-connect-url, jdbc-driver-class, user, and password.
 
 For example,
 #file connection.props
-jdbc-connect-url=jdbc:oracle:thin:@myhost.mydomain.org:1528:mysid
+jdbc-connect-url=jdbc:oracle:thin:myhost.mydomain.org:1528:mysid
 jdbc-driver-class=oracle.jdbc.OracleDriver
 user=mydbuser
 password=mypassword
 
 Then invoke the command like this:
 
-  java -cp db-metadata.jar:ojdbc14.jar com.github.scharris.db_metadata.DBMetaData myschema connection.props myschema.xml
+  java -cp dbmd.jar:ojdbc6.jar gov.fda.nctr.dbmd.DatabaseMetaDataFetcher myschema connection.props myschema.xml
 
 which would write the database metadata for schema myschema to file myschema.xml.

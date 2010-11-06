@@ -1,41 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project basedir="." default="compile" name="database-md">
+<project basedir="." default="jar" name="dbmd">
+	
+	<property name="src" value="src"/>
+	
+	<mkdir dir="build"/>
+	
+	<target depends="" name="compile">
+		<javac debug="true" deprecation="true"  srcdir="${src}" destdir="build" target="1.6">
+		</javac>
+	</target>
 
-  <property name="nk.home" value="../../NetKernel"/>
 
-  <target depends="" name="compile">
-    <javac debug="true" deprecation="true"  srcdir="." destdir="." target="1.5">
-      <classpath>
-        <pathelement location="."/>
-		<pathelement location="${nk.home}/lib/1060netkernel-2.8.5.jar"/>
-		<pathelement location="${nk.home}/modules/ext-xml-core-1.5.2.jar"/>
-		<pathelement location="${nk.home}/modules/ext-layer1-1.3.5.jar"/>
-		<pathelement location="${nk.home}/modules/mod-db"/>
-      </classpath>
-    </javac>
-  </target>
-
-  <!-- jar -->
-  <target name="jar"
+	<!-- jar -->
+	<target name="jar"
 		  depends="clean, compile"
 		  description="generate module jar file">
-	<jar jarfile="db-metadata.jar" basedir="." includes="**/*" excludes="db-metadata.jar,.git/" />
-  </target>
 
+		<copy todir="build">
+			<fileset dir="${src}" includes="**/*.java, **/jaxb.index"/>
+		</copy>
 
-  <!-- publish -->
-  <target name="publish" depends="jar">
-	<copy file="db-metadata.jar" todir="${nk.home}/modules/" overwrite="true"/>
-  </target>
+		<jar jarfile="dbmd.jar" basedir="build" includes="**/*" excludes="dbmd.jar" />
 
+    </target>
 
-  <!-- clean -->
-  <target name="clean" description="clean up" >
-	<delete>
-	  <fileset dir="com" includes="**/*.class"/>
-	  <fileset dir="." includes="*.jar"/>
-	</delete>
-  </target>
-  	
+	<!--
+	<target name="create-jaxb-index" depends="compile">
+	    <fileset id="domain-sources" dir="${src}">
+	      <include name="**/*.java"/>
+	      <exclude name="**/DatabaseMetaDataFetcher.java"/>
+	      <exclude name="**/package-info.java"/>
+	    </fileset>
+		
+	    <pathconvert property="domain-list" refid="domain-sources" pathsep="${line.separator}">
+	      <chainedmapper>
+	        <flattenmapper/>
+	        <globmapper from="*.java" to="*" casesensitive="false"/>
+	      </chainedmapper>
+	    </pathconvert>
+		
+	    <echo file="src/gov/fda/nctr/dbmd/jaxb.index" message="${domain-list}"/>
+	</target>
+-->
+	
+
+	<!-- clean -->
+	<target name="clean" description="clean up">
+		<delete failonerror="false">
+			<fileset dir="build" includes="**"/>
+		</delete>
+	</target>
+
 </project>

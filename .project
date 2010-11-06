@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>db-metadata</name>
+	<name>dbmd</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -14,11 +14,4 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>nk-home</name>
-			<type>2</type>
-			<location>/home/sharris/Programming/NetKernel</location>
-		</link>
-	</linkedResources>
 </projectDescription>
