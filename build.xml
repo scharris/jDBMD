@@ -2,12 +2,14 @@
 
 <project basedir="." default="jar" name="dbmd">
 	
-	<property name="src" value="src"/>
-	
-	<mkdir dir="build"/>
+	<property name="jarbasename" value="dbmd"/>
+	<property name="src.dir" location="src"/>
+	<property name="build.dir" location="build"/>
+	<property name="extra_src_resources_to_jar" value="**/*.java, **/jaxb.index"/> <!-- resources under src to include in the jar, besides class files --> 
 	
 	<target depends="" name="compile">
-		<javac debug="true" deprecation="true"  srcdir="${src}" destdir="build" target="1.6">
+		<mkdir dir="${build.dir}"/>
+		<javac debug="true" deprecation="true"  srcdir="${src.dir}" destdir="${build.dir}" target="1.6">
 		</javac>
 	</target>
 
@@ -17,38 +19,19 @@
 		  depends="clean, compile"
 		  description="generate module jar file">
 
-		<copy todir="build">
-			<fileset dir="${src}" includes="**/*.java, **/jaxb.index"/>
+		<copy todir="${build.dir}">
+			<fileset dir="${src.dir}" includes="${extra_src_resources_to_jar}"/>
 		</copy>
 
-		<jar jarfile="dbmd.jar" basedir="build" includes="**/*" excludes="dbmd.jar" />
+		<jar jarfile="${jarbasename}.jar" basedir="${build.dir}" includes="**/*" excludes="${jarbasename}.jar" />
 
     </target>
 
-	<!--
-	<target name="create-jaxb-index" depends="compile">
-	    <fileset id="domain-sources" dir="${src}">
-	      <include name="**/*.java"/>
-	      <exclude name="**/DatabaseMetaDataFetcher.java"/>
-	      <exclude name="**/package-info.java"/>
-	    </fileset>
-		
-	    <pathconvert property="domain-list" refid="domain-sources" pathsep="${line.separator}">
-	      <chainedmapper>
-	        <flattenmapper/>
-	        <globmapper from="*.java" to="*" casesensitive="false"/>
-	      </chainedmapper>
-	    </pathconvert>
-		
-	    <echo file="src/gov/fda/nctr/dbmd/jaxb.index" message="${domain-list}"/>
-	</target>
--->
-	
 
 	<!-- clean -->
 	<target name="clean" description="clean up">
 		<delete failonerror="false">
-			<fileset dir="build" includes="**"/>
+			<fileset dir="${build.dir}" includes="**"/>
 		</delete>
 	</target>
 
