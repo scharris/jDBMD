@@ -79,7 +79,7 @@ public class Field {
     }
 
 
-    public int getJDBCTypeCode()
+    public int getJdbcTypeCode()
     {
         return jdbcTypeCode;
     }
@@ -88,8 +88,8 @@ public class Field {
     {
         return dbTypeName;
     }
-
-    public Integer getLength()
+    
+	public Integer getLength()
     {
         return length;
     }
@@ -123,5 +123,4 @@ public class Field {
     {
         return comment;
     }
-
 }

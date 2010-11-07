@@ -209,16 +209,17 @@ public class DBMD {
 		  res.addAll(foreignKeys);
 	  else if ( child_rel_id != null && parent_rel_id != null )
 	  {
-		  res.addAll(fksByChildRelId().get(child_rel_id));
-		  res.retainAll(fksByParentRelId().get(parent_rel_id));
+		  res.addAll(fksByChildRelId(child_rel_id)); // TODO: the map is returning null for some
+		  res.retainAll(fksByParentRelId(parent_rel_id));
 	  }
 	  else
-		  res.addAll(child_rel_id != null ? fksByChildRelId().get(child_rel_id)
-				                          : fksByParentRelId().get(parent_rel_id));
+		  res.addAll(child_rel_id != null ? fksByChildRelId(child_rel_id)
+				                          : fksByParentRelId(parent_rel_id));
 		  
 	  return res;
   }
   
+
   /** Return the field names in the passed table involved in foreign keys (to parents). */
   public List<String> getForeignKeyFieldNames(RelId rel_id,
                                               String alias) // optional
@@ -282,6 +283,7 @@ public class DBMD {
           return id;
   }
   
+  
   public RelId toRelId(String catalog, String schema, String relname)
   {
 	  return new RelId(normalizeDatabaseId(catalog),
@@ -331,20 +333,28 @@ public class DBMD {
 	  return relMDsByRelId;
   }
   
-  protected Map<RelId, List<ForeignKey>> fksByParentRelId()
+  private List<ForeignKey> fksByParentRelId(RelId rel_id)
   {
 	  if ( fksByParentRelId == null )
 		  initDerivedData();
 	  
-	  return fksByParentRelId;
+	  List<ForeignKey> fks = fksByParentRelId.get(rel_id);
+	  if (fks != null)
+		  return fks;
+	  else
+		  return Collections.emptyList();
   }
   
-  protected Map<RelId, List<ForeignKey>> fksByChildRelId()
+  private List<ForeignKey> fksByChildRelId(RelId rel_id)
   {
 	  if ( fksByChildRelId == null )
 		  initDerivedData();
 	  
-	  return fksByChildRelId;
+	  List<ForeignKey> fks = fksByChildRelId.get(rel_id);
+	  if (fks != null)
+		  return fks;
+	  else
+		  return Collections.emptyList();
   }
   
   protected void initDerivedData() 
