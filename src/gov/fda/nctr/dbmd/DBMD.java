@@ -55,8 +55,6 @@ public class DBMD {
 	  							INSENSITIVE_STORED_MIXED,
 	  							SENSITIVE }
   
-  
-  
   public DBMD(String owningSchemaName,
               List<RelMetaData> relMetaDatas,
               List<ForeignKey> foreignKeys,
@@ -401,14 +399,23 @@ public class DBMD {
 	  os.flush();
   }
 
-  public static DBMD readXML(InputStream is) throws JAXBException
+  public static DBMD readXML(InputStream is, boolean close_stream) throws JAXBException, IOException
   {
 	  String packageName = DBMD.class.getPackage().getName();
 	  
 	  Unmarshaller u = JAXBContext.newInstance(packageName, DBMD.class.getClassLoader()).createUnmarshaller();
 
-	  return (DBMD)u.unmarshal(is);
+	  DBMD dbmd = (DBMD)u.unmarshal(is);
+	  
+	  if ( close_stream )
+		  is.close();
+	  
+	  return dbmd;
   }
   
+  public static DBMD readXML(InputStream is) throws JAXBException, IOException
+  {
+	  return readXML(is, false);
+  }
 }
 
