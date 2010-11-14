@@ -23,6 +23,11 @@ import java.util.*;
 
 public class DatabaseMetaDataFetcher {
     
+    /*  The allDatesAreTimeStamps workaround is for Oracle 9 and 10 drivers (have not tested 11 yet), which report
+     *  oracle DATE columns as SQL Date columns, when they are really SQL TimeStamps.  Considering the column as a
+     *  SQL Date would cause a failure if e.g. an attempt is made to insert a {d YYYY-mm-dd} standard jdbc escaped
+     *  SQL Date value into the column. 
+     */ 
     private boolean allDatesAreTimeStamps;
     
     
@@ -105,9 +110,9 @@ public class DatabaseMetaDataFetcher {
 
         while (rs.next())
         {
-            rel_descrs.add(new RelDescr(new RelId(rs.getString(1),rs.getString(2),rs.getString(3)),
-                                                  rs.getString(4).toLowerCase().equals("table") ? RelType.Table : RelType.View,
-                                                  rs.getString(5)));
+            rel_descrs.add(new RelDescr(new RelId(rs.getString("TABLE_CAT"),rs.getString("TABLE_SCHEM"),rs.getString("TABLE_NAME")),
+                                                  rs.getString("TABLE_TYPE").toLowerCase().equals("table") ? RelType.Table : RelType.View,
+                                                  rs.getString("REMARKS")));
         }
 
         return rel_descrs;
@@ -142,7 +147,7 @@ public class DatabaseMetaDataFetcher {
                         
             while(cols_rs.next())
             {
-                RelId rel_id = new RelId(cols_rs.getString(1), cols_rs.getString(2), cols_rs.getString(3));
+                RelId rel_id = new RelId(cols_rs.getString("TABLE_CAT"), cols_rs.getString("TABLE_SCHEM"), cols_rs.getString("TABLE_NAME"));
 
                 RelDescr rel_descr = rel_descrs_by_relid.get(rel_id);
                 
@@ -215,15 +220,15 @@ public class DatabaseMetaDataFetcher {
                     if (comps != null)
                         fks.add(new ForeignKey(src_rel, tgt_rel, comps));
 
-                    src_rel = new RelId(fk_rs.getString(5), fk_rs.getString(6), fk_rs.getString(7));
-                    tgt_rel = new RelId(fk_rs.getString(1), fk_rs.getString(2), fk_rs.getString(3));
+                    src_rel = new RelId(fk_rs.getString("FKTABLE_CAT"), fk_rs.getString("FKTABLE_SCHEM"), fk_rs.getString("FKTABLE_NAME"));
+                    tgt_rel = new RelId(fk_rs.getString("PKTABLE_CAT"), fk_rs.getString("PKTABLE_SCHEM"), fk_rs.getString("PKTABLE_NAME"));
                     
                     comps = new ArrayList<ForeignKey.Component>();
-                    comps.add(new ForeignKey.Component(fk_rs.getString(8), fk_rs.getString(4)));
+                    comps.add(new ForeignKey.Component(fk_rs.getString("FKCOLUMN_NAME"), fk_rs.getString("PKCOLUMN_NAME")));
                 }
                 else
                 {
-                    comps.add(new ForeignKey.Component(fk_rs.getString(8), fk_rs.getString(4)));
+                    comps.add(new ForeignKey.Component(fk_rs.getString("FKCOLUMN_NAME"), fk_rs.getString("PKCOLUMN_NAME")));
                 }
             }
 
@@ -272,9 +277,18 @@ public class DatabaseMetaDataFetcher {
             return id;
     }
     
-    protected static Integer getInteger(ResultSet rs, int cnum) throws SQLException
+    protected static Integer getRSInteger(ResultSet rs, int cnum) throws SQLException
     {
         int i = rs.getInt(cnum);
+        if (rs.wasNull())
+            return null;
+        else
+            return i;
+    }
+    
+    protected static Integer getRSInteger(ResultSet rs, String col_name) throws SQLException
+    {
+        int i = rs.getInt(col_name);
         if (rs.wasNull())
             return null;
         else
@@ -394,32 +408,34 @@ public class DatabaseMetaDataFetcher {
 	            pkseqnums_by_name.put(pk_rs.getString(4), pk_rs.getInt(5));
 	        pk_rs.close();
 	
-	        String name = cols_rs.getString(4);
-	        int type_code = getInteger(cols_rs, 5);
-	        
-	        /*  The allDatesAreTimeStamps workaround is for Oracle 9 and 10 drivers (have not tested 11 yet), which report
-	         *  oracle DATE columns as SQL Date columns, when they are really SQL TimeStamps.  Considering the column as a
-	         *  SQL Date would cause a failure if e.g. an attempt is made to insert a {d YYYY-mm-dd} standard jdbc escaped
-	         *  SQL Date value into the column. 
-	         */ 
+	        String name = cols_rs.getString("COLUMN_NAME");
+	        int type_code = getRSInteger(cols_rs, "DATA_TYPE");
 	        if ( type_code == Types.DATE && allDatesAreTimeStamps ) 
 	            type_code = Types.TIMESTAMP;
+	        String db_native_type_name = cols_rs.getString("TYPE_NAME");
+	        int size = getRSInteger(cols_rs, "COLUMN_SIZE");
+	        int length = isJdbcTypeChar(type_code) ? size : null;
+	        int nullable_db = getRSInteger(cols_rs, "NULLABLE");
+	        Boolean nullable = (nullable_db == ResultSetMetaData.columnNoNulls) ?
+	        		Boolean.FALSE 
+	        	 : (nullable_db == ResultSetMetaData.columnNullable) ? Boolean.TRUE : null;
+	        int fractional_digits = isJdbcTypeNumeric(type_code) ? getRSInteger(cols_rs, "DECIMAL_DIGITS") : null;
+	        int precision = isJdbcTypeNumeric(type_code) ? size : null;
+	        int radix = isJdbcTypeNumeric(type_code) ? getRSInteger(cols_rs, "NUM_PREC_RADIX") : null;
+	        int pk_part_num = pkseqnums_by_name.get(name);
+	        String comment = cols_rs.getString("REMARKS");
 	        
-	        int size = getInteger(cols_rs, 7);
-	        int nullable = getInteger(cols_rs, 11);
-	        
-	        return new Field(new RelId(cols_rs.getString(1), cols_rs.getString(2), cols_rs.getString(3)),
+	        return new Field(new RelId(cols_rs.getString("TABLE_CAT"), cols_rs.getString("TABLE_SCHEM"), cols_rs.getString("TABLE_NAME")),
 	                         name,
 	                         type_code,
-	                         cols_rs.getString(6), // type name
-	                         isJdbcTypeChar(type_code) ? size : null, // length
-	                         isJdbcTypeNumeric(type_code) ? size : null, // precision
-	                         isJdbcTypeNumeric(type_code) ? getInteger(cols_rs, 9) : null, // fractional_digits
-	                         isJdbcTypeNumeric(type_code) ? getInteger(cols_rs, 10) : null, // radix
-	                         (nullable == ResultSetMetaData.columnNoNulls) ? Boolean.FALSE 
-	                                       : (nullable == ResultSetMetaData.columnNullable) ? Boolean.TRUE : null,
-	                         pkseqnums_by_name.get(name), // pk part num
-	                         cols_rs.getString(12)); // comment
+	                         db_native_type_name,
+	                         length,
+	                         precision,
+	                         fractional_digits,
+	                         radix,
+	                         nullable,
+	                         pk_part_num,
+	                         comment);
 	    }
 	    finally
 	    {

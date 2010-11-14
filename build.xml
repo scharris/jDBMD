@@ -9,14 +9,14 @@
 	
 	<target depends="" name="compile">
 		<mkdir dir="${build.dir}"/>
-		<javac debug="true" deprecation="true"  srcdir="${src.dir}" destdir="${build.dir}" target="1.6">
+		<javac debug="true" deprecation="true"  srcdir="${src.dir}" destdir="${build.dir}" target="1.6" fork="true">
 		</javac>
 	</target>
 
 
 	<!-- jar -->
 	<target name="jar"
-		  depends="clean, compile"
+		  depends="clean,compile"
 		  description="generate module jar file">
 
 		<copy todir="${build.dir}">
