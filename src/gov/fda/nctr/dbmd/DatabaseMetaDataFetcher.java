@@ -295,8 +295,11 @@ public class DatabaseMetaDataFetcher {
             return i;
     }
     
-    public static boolean isJdbcTypeNumeric(int jdbc_type)
+    public static boolean isJdbcTypeNumeric(Integer jdbc_type)
     {
+       	if ( jdbc_type == null )
+    		return false;
+       	
         switch (jdbc_type)
         {
         case Types.TINYINT:
@@ -314,8 +317,11 @@ public class DatabaseMetaDataFetcher {
         }
     }
     
-    public static boolean isJdbcTypeChar(int jdbc_type)
+    public static boolean isJdbcTypeChar(Integer jdbc_type)
     {
+    	if ( jdbc_type == null )
+    		return false;
+    	
         switch (jdbc_type)
         {
         case Types.CHAR:
@@ -409,20 +415,20 @@ public class DatabaseMetaDataFetcher {
 	        pk_rs.close();
 	
 	        String name = cols_rs.getString("COLUMN_NAME");
-	        int type_code = getRSInteger(cols_rs, "DATA_TYPE");
+	        Integer type_code = getRSInteger(cols_rs, "DATA_TYPE");
 	        if ( type_code == Types.DATE && allDatesAreTimeStamps ) 
 	            type_code = Types.TIMESTAMP;
 	        String db_native_type_name = cols_rs.getString("TYPE_NAME");
-	        int size = getRSInteger(cols_rs, "COLUMN_SIZE");
-	        int length = isJdbcTypeChar(type_code) ? size : null;
-	        int nullable_db = getRSInteger(cols_rs, "NULLABLE");
+	        Integer size = getRSInteger(cols_rs, "COLUMN_SIZE");
+	        Integer length = isJdbcTypeChar(type_code) ? size : null;
+	        Integer nullable_db = getRSInteger(cols_rs, "NULLABLE");
 	        Boolean nullable = (nullable_db == ResultSetMetaData.columnNoNulls) ?
 	        		Boolean.FALSE 
 	        	 : (nullable_db == ResultSetMetaData.columnNullable) ? Boolean.TRUE : null;
-	        int fractional_digits = isJdbcTypeNumeric(type_code) ? getRSInteger(cols_rs, "DECIMAL_DIGITS") : null;
-	        int precision = isJdbcTypeNumeric(type_code) ? size : null;
-	        int radix = isJdbcTypeNumeric(type_code) ? getRSInteger(cols_rs, "NUM_PREC_RADIX") : null;
-	        int pk_part_num = pkseqnums_by_name.get(name);
+	        Integer fractional_digits = isJdbcTypeNumeric(type_code) ? getRSInteger(cols_rs, "DECIMAL_DIGITS") : null;
+	        Integer precision = isJdbcTypeNumeric(type_code) ? size : null;
+	        Integer radix = isJdbcTypeNumeric(type_code) ? getRSInteger(cols_rs, "NUM_PREC_RADIX") : null;
+	        Integer pk_part_num = pkseqnums_by_name.get(name);
 	        String comment = cols_rs.getString("REMARKS");
 	        
 	        return new Field(new RelId(cols_rs.getString("TABLE_CAT"), cols_rs.getString("TABLE_SCHEM"), cols_rs.getString("TABLE_NAME")),
