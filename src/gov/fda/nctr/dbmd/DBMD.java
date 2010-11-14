@@ -207,7 +207,7 @@ public class DBMD {
 		  res.addAll(foreignKeys);
 	  else if ( child_rel_id != null && parent_rel_id != null )
 	  {
-		  res.addAll(fksByChildRelId(child_rel_id)); // TODO: the map is returning null for some
+		  res.addAll(fksByChildRelId(child_rel_id));
 		  res.retainAll(fksByParentRelId(parent_rel_id));
 	  }
 	  else
@@ -281,6 +281,35 @@ public class DBMD {
           return id;
   }
   
+  public Set<String> normalizeNames(Set<String> names)
+  {
+	  if ( names == null )
+		  return null;
+	  else
+	  {
+		  final Set<String> normd_names = new HashSet<String>();
+
+		  for(String name: names)
+			  normd_names.add(normalizeDatabaseId(name));
+
+		  return normd_names;
+	  }
+  }
+  
+  
+  public ForeignKey getForeignKeyHavingFieldSetAmong(Set<String> src_field_names, java.util.Collection<ForeignKey> fks)
+  {
+	  Set<String> normd_field_names = normalizeNames(src_field_names);
+
+	  for(ForeignKey fk: fks)
+	  {
+		  if ( fk.sourceFieldNamesSetEqualsNormalizedNamesSet(normd_field_names) )
+			  return fk;
+	  }
+
+	  return null;
+  }
+
   
   public RelId toRelId(String catalog, String schema, String relname)
   {
@@ -318,6 +347,7 @@ public class DBMD {
 	                 normalizeDatabaseId(schema),
 	                 normalizeDatabaseId(relname));
   }
+  
   
   
   /////////////////////////////////////////////////////////
