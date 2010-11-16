@@ -3,7 +3,7 @@
 <project basedir="." default="jar" name="dbmd">
 	
 	<property name="jarbasename" value="dbmd"/>
-	<property name="src.dir" location="src"/>
+	<property name="src.dir" location="src/main/java"/>
 	<property name="build.dir" location="build"/>
 	<property name="extra_src_resources_to_jar" value="**/*.java, **/jaxb.index"/> <!-- resources under src to include in the jar, besides class files --> 
 	
