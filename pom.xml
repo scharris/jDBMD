@@ -4,6 +4,15 @@
   <artifactId>dbmd</artifactId>
   <version>1.0</version>
   <name>Database Metadata Access Library</name>
+  
+	<distributionManagement>
+    <repository>
+        <id>nctr-maven-repo</id>
+        <name>nctr-maven-repo-releases</name>
+        <url>http://ncsvmweb01.nctr.fda.gov:8080/artifactory/libs-release-local</url>
+    </repository>
+	</distributionManagement>
+  
   <build>
     <plugins>
       <plugin>
@@ -16,14 +25,5 @@
         </configuration>
       </plugin>
     </plugins>
-		
-    <resources>
-      <resource>
-        <directory>${basedir}/src/main/resources</directory>
-      </resource>
-      <resource>
-        <directory>${basedir}/src/main/java</directory>
-      </resource>
-    </resources>
   </build>
 </project>
