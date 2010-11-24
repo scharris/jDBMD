@@ -6,12 +6,15 @@
   <name>Database Metadata Access Library</name>
   
 	<distributionManagement>
-    <repository>
-        <id>nctr-maven-repo</id>
-        <name>nctr-maven-repo-releases</name>
-        <url>http://ncsvmweb01.nctr.fda.gov:8080/artifactory/libs-release-local</url>
-    </repository>
+  	<repository>
+    	<id>nctr-maven-repo-server</id>
+    	<url>http://ncsvmweb01.nctr.fda.gov:8080/mvnrepo/content/repositories/releases</url>
+  	</repository>
 	</distributionManagement>
+  
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
   
   <build>
     <plugins>
