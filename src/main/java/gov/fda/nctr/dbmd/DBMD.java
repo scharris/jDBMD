@@ -55,6 +55,8 @@ public class DBMD {
 	  							INSENSITIVE_STORED_MIXED,
 	  							SENSITIVE }
   
+  public enum ForeignKeyInclusion { REGISTERED_TABLES_ONLY, ALL_FKS }
+  
   public DBMD(String owningSchemaName,
               List<RelMetaData> relMetaDatas,
               List<ForeignKey> foreignKeys,
@@ -199,12 +201,15 @@ public class DBMD {
   
   
   public List<ForeignKey> getForeignKeysFromTo(RelId child_rel_id,  // optional
-                                               RelId parent_rel_id) // optional
+                                               RelId parent_rel_id, // optional
+                                               ForeignKeyInclusion fks_incl)
   {
 	  List<ForeignKey> res = new ArrayList<ForeignKey>();
 	  
 	  if ( child_rel_id == null && parent_rel_id == null )
+	  {
 		  res.addAll(foreignKeys);
+	  }
 	  else if ( child_rel_id != null && parent_rel_id != null )
 	  {
 		  res.addAll(fksByChildRelId(child_rel_id));
@@ -213,10 +218,30 @@ public class DBMD {
 	  else
 		  res.addAll(child_rel_id != null ? fksByChildRelId(child_rel_id)
 				                          : fksByParentRelId(parent_rel_id));
+	  
+	  if ( fks_incl == ForeignKeyInclusion.REGISTERED_TABLES_ONLY )
+	  {
+		  List<ForeignKey> res_filtered = new ArrayList<ForeignKey>();
 		  
-	  return res;
+		  for(ForeignKey fk: res)
+			  if ( getRelationMetaData(fk.getSourceRelationId()) != null &&
+				   getRelationMetaData(fk.getTargetRelationId()) != null )
+				  res_filtered.add(fk);
+		  
+		  return res_filtered;
+	  }
+	  else
+		  return res;
   }
   
+  public List<ForeignKey> getForeignKeysFromTo(RelId child_rel_id,  // optional
+                                               RelId parent_rel_id) // optional
+  {
+	  return getForeignKeysFromTo(child_rel_id,
+	                              parent_rel_id,
+	                              ForeignKeyInclusion.REGISTERED_TABLES_ONLY);
+  }
+
 
   /** Return the field names in the passed table involved in foreign keys (to parents). */
   public List<String> getForeignKeyFieldNames(RelId rel_id,
