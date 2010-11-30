@@ -55,7 +55,7 @@ public class DBMD {
 	  							INSENSITIVE_STORED_MIXED,
 	  							SENSITIVE }
   
-  public enum ForeignKeyInclusion { REGISTERED_TABLES_ONLY, ALL_FKS }
+  public enum ForeignKeyScope { REGISTERED_TABLES_ONLY, ALL_FKS }
   
   public DBMD(String owningSchemaName,
               List<RelMetaData> relMetaDatas,
@@ -202,7 +202,7 @@ public class DBMD {
   
   public List<ForeignKey> getForeignKeysFromTo(RelId child_rel_id,  // optional
                                                RelId parent_rel_id, // optional
-                                               ForeignKeyInclusion fks_incl)
+                                               ForeignKeyScope fks_incl)
   {
 	  List<ForeignKey> res = new ArrayList<ForeignKey>();
 	  
@@ -219,7 +219,7 @@ public class DBMD {
 		  res.addAll(child_rel_id != null ? fksByChildRelId(child_rel_id)
 				                          : fksByParentRelId(parent_rel_id));
 	  
-	  if ( fks_incl == ForeignKeyInclusion.REGISTERED_TABLES_ONLY )
+	  if ( fks_incl == ForeignKeyScope.REGISTERED_TABLES_ONLY )
 	  {
 		  List<ForeignKey> res_filtered = new ArrayList<ForeignKey>();
 		  
@@ -239,8 +239,39 @@ public class DBMD {
   {
 	  return getForeignKeysFromTo(child_rel_id,
 	                              parent_rel_id,
-	                              ForeignKeyInclusion.REGISTERED_TABLES_ONLY);
+	                              ForeignKeyScope.REGISTERED_TABLES_ONLY);
   }
+  
+  /** Return a single foreign key between the passed tables, having the specified field names if specified.
+   *  Returns null if no such foreign key is found, or throws IllegalArgumentException if multiple foreign keys satisfy the requirements.
+   */
+  public ForeignKey getForeignKeyFromTo(RelId from_relid,        // Required
+                                        RelId to_relid,          // Required
+                                        Set<String> field_names, // Optional
+                                        ForeignKeyScope inclusion_scope) // Required
+  {
+	  final Set<String> normd_fk_field_names = field_names != null ? normalizeNames(field_names) : null;
+
+	  ForeignKey sought_fk = null;
+	  for(ForeignKey fk: getForeignKeysFromTo(from_relid, to_relid, inclusion_scope))
+	  {
+		  if ( normd_fk_field_names == null || fk.sourceFieldNamesSetEqualsNormalizedNamesSet(normd_fk_field_names) )
+		  {
+			  if ( sought_fk != null ) // already found an fk satisfying requirements?
+				  throw new IllegalArgumentException("Child table " + from_relid +
+				                                     " has multiple foreign keys to parent table " + to_relid +
+				                                     (field_names != null ? " with the same specified source field set." 
+				                                    		              : " and no foreign key field names were specified to disambiguate."));
+
+			  sought_fk = fk;
+				
+			  // No breaking from the loop here, so case that multiple fk's satisfy requirements can be detected.
+		  }
+	  }
+
+	  return sought_fk;
+  }
+  
 
 
   /** Return the field names in the passed table involved in foreign keys (to parents). */
@@ -292,6 +323,19 @@ public class DBMD {
   }
   
   
+  public ForeignKey getForeignKeyHavingFieldSetAmong(Set<String> src_field_names, java.util.Collection<ForeignKey> fks)
+  {
+	  Set<String> normd_field_names = normalizeNames(src_field_names);
+
+	  for(ForeignKey fk: fks)
+	  {
+		  if ( fk.sourceFieldNamesSetEqualsNormalizedNamesSet(normd_field_names) )
+			  return fk;
+	  }
+
+	  return null;
+  }
+
   public String normalizeDatabaseId(String id)
   {
       if (id == null || id.equals(""))
@@ -321,20 +365,6 @@ public class DBMD {
 	  }
   }
   
-  
-  public ForeignKey getForeignKeyHavingFieldSetAmong(Set<String> src_field_names, java.util.Collection<ForeignKey> fks)
-  {
-	  Set<String> normd_field_names = normalizeNames(src_field_names);
-
-	  for(ForeignKey fk: fks)
-	  {
-		  if ( fk.sourceFieldNamesSetEqualsNormalizedNamesSet(normd_field_names) )
-			  return fk;
-	  }
-
-	  return null;
-  }
-
   
   public RelId toRelId(String catalog, String schema, String relname)
   {
