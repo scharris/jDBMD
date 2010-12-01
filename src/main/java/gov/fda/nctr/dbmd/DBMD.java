@@ -88,6 +88,16 @@ public class DBMD {
 	  return relMetaDatas;
   }
   
+  
+  public List<RelId> getRelationIds()
+  {
+	  List<RelId> relids = new ArrayList<RelId>();
+	  
+	  for(RelMetaData relmd: relMetaDatas)
+		  relids.add(relmd.getRelationId());
+	  
+	  return relids;
+  }
 
   public List<ForeignKey> getForeignKeys()
   {
