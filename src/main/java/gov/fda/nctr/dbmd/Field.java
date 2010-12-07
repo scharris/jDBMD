@@ -1,5 +1,7 @@
 package gov.fda.nctr.dbmd;
 
+import java.sql.Types;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -123,4 +125,53 @@ public class Field {
     {
         return comment;
     }
+    
+    public boolean isNumericType()
+    {
+    	return isJdbcTypeNumeric(jdbcTypeCode);
+    }
+    
+    public boolean isCharacterType()
+    {
+    	return isJdbcTypeChar(jdbcTypeCode);
+    }
+    
+    public static boolean isJdbcTypeNumeric(Integer jdbc_type)
+    {
+       	if ( jdbc_type == null )
+    		return false;
+       	
+        switch (jdbc_type)
+        {
+        case Types.TINYINT:
+        case Types.SMALLINT:
+        case Types.INTEGER:
+        case Types.BIGINT:
+        case Types.FLOAT:
+        case Types.REAL:
+        case Types.DOUBLE:
+        case Types.DECIMAL:
+        case Types.NUMERIC:
+            return true;
+        default:
+            return false;
+        }
+    }
+    
+    public static boolean isJdbcTypeChar(Integer jdbc_type)
+    {
+    	if ( jdbc_type == null )
+    		return false;
+    	
+        switch (jdbc_type)
+        {
+        case Types.CHAR:
+        case Types.VARCHAR:
+        case Types.LONGVARCHAR:
+            return true;
+        default:
+            return false;
+        }
+    }
+
 }

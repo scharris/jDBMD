@@ -297,40 +297,12 @@ public class DatabaseMetaDataFetcher {
     
     public static boolean isJdbcTypeNumeric(Integer jdbc_type)
     {
-       	if ( jdbc_type == null )
-    		return false;
-       	
-        switch (jdbc_type)
-        {
-        case Types.TINYINT:
-        case Types.SMALLINT:
-        case Types.INTEGER:
-        case Types.BIGINT:
-        case Types.FLOAT:
-        case Types.REAL:
-        case Types.DOUBLE:
-        case Types.DECIMAL:
-        case Types.NUMERIC:
-            return true;
-        default:
-            return false;
-        }
+       	return Field.isJdbcTypeNumeric(jdbc_type);
     }
     
     public static boolean isJdbcTypeChar(Integer jdbc_type)
     {
-    	if ( jdbc_type == null )
-    		return false;
-    	
-        switch (jdbc_type)
-        {
-        case Types.CHAR:
-        case Types.VARCHAR:
-        case Types.LONGVARCHAR:
-            return true;
-        default:
-            return false;
-        }
+    	return Field.isJdbcTypeChar(jdbc_type);
     }
     
     public static String jdbcTypeToString(int jdbc_type)
