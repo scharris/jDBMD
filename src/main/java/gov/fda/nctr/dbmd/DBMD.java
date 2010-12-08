@@ -375,6 +375,18 @@ public class DBMD {
 	  }
   }
   
+  public Map<String,String> normalizeNameKeys(Map<String,String> map_with_identifier_keys)
+  {
+	  Map<String,String> res = new HashMap<String,String>();
+		
+	  for(Map.Entry<String,String> e: map_with_identifier_keys.entrySet())
+	  {
+		  res.put(normalizeDatabaseId(e.getKey()), e.getValue());
+	  }
+		
+	  return res;
+  }
+  
   
   public RelId toRelId(String catalog, String schema, String relname)
   {

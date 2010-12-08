@@ -2,13 +2,13 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>gov.fda.nctr</groupId>
   <artifactId>dbmd</artifactId>
-  <version>1.0.4</version>
+  <version>1.0.5-SNAPSHOT</version>
   <name>Database Metadata Access Library</name>
   
 	<distributionManagement>
   	<repository>
     	<id>nctr-maven-repo-server</id>
-    	<url>http://ncsvmweb01.nctr.fda.gov:8080/mvnrepo/content/repositories/releases</url>
+    	<url>http://ncsvmweb01.nctr.fda.gov:8080/mvnrepo/content/repositories/snapshots</url>
   	</repository>
 	</distributionManagement>
   
