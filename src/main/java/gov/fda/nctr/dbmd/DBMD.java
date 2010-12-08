@@ -375,13 +375,13 @@ public class DBMD {
 	  }
   }
   
-  public Map<String,String> normalizeNameKeys(Map<String,String> map_with_identifier_keys)
+  public <E> Map<String,E> normalizeNameKeys(Map<String,E> map_with_identifier_keys)
   {
-	  Map<String,String> res = new HashMap<String,String>();
+	  Map<String,E> res = new HashMap<String,E>();
 		
-	  for(Map.Entry<String,String> e: map_with_identifier_keys.entrySet())
+	  for(Map.Entry<String,E> entry: map_with_identifier_keys.entrySet())
 	  {
-		  res.put(normalizeDatabaseId(e.getKey()), e.getValue());
+		  res.put(normalizeDatabaseId(entry.getKey()), entry.getValue());
 	  }
 		
 	  return res;
