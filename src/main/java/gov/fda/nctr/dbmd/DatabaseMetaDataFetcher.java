@@ -11,34 +11,27 @@ import java.sql.*;
 import java.util.*;
 
 
-/* Notes
- *  Oracle idiosyncrasies:
- *     - For Oracle 9 and 10 drivers, pass true for perverse_oracle_driver so that Oracle DATE columns are 
- *       treated as SQL TimeStamps.  Failing to do this will cause errors for programs that take this metadata
- *       seriously.  E.g. attempts to use {d yyyy-mm-dd} syntax for setting the field values will fail.
- *     - Oracle will not include comments in metadata by default.  To enable comment reporting, set the remarksReporting
- *       connection property to true.  
- */
-
-
 public class DatabaseMetaDataFetcher {
     
-    /*  The allDatesAreTimeStamps workaround is for Oracle 9 and 10 drivers (have not tested 11 yet), which report
-     *  oracle DATE columns as SQL Date columns, when they are really SQL TimeStamps.  Considering the column as a
-     *  SQL Date would cause a failure if e.g. an attempt is made to insert a {d YYYY-mm-dd} standard jdbc escaped
-     *  SQL Date value into the column. 
-     */ 
-    private boolean allDatesAreTimeStamps;
-    
+	public static enum DateMapping { DATES_AS_DRIVER_REPORTED, DATES_AS_TIMESTAMPS, DATES_AS_DATES }
+	
+	DateMapping dateMapping;
+	
     
     public DatabaseMetaDataFetcher()
     {
+    	this(DateMapping.DATES_AS_DRIVER_REPORTED);
+    }
+    
+    public DatabaseMetaDataFetcher(DateMapping mapping)
+    {
+    	this.dateMapping = mapping;
     }
     
     
-    public void setAllDatesAreTimeStamps(boolean perverse_oracle_driver)
+    public void setDateMapping(DateMapping mapping)
     {
-        allDatesAreTimeStamps = perverse_oracle_driver;
+    	this.dateMapping = mapping;
     }
     
     
@@ -388,9 +381,9 @@ public class DatabaseMetaDataFetcher {
 	
 	        String name = cols_rs.getString("COLUMN_NAME");
 	        Integer type_code = getRSInteger(cols_rs, "DATA_TYPE");
-	        if ( type_code == Types.DATE && allDatesAreTimeStamps ) 
-	            type_code = Types.TIMESTAMP;
 	        String db_native_type_name = cols_rs.getString("TYPE_NAME");
+	        if ( type_code == Types.DATE || type_code == Types.TIMESTAMP )
+	        	type_code = getTypeCodeForDateOrTimestampColumn(type_code, db_native_type_name);
 	        Integer size = getRSInteger(cols_rs, "COLUMN_SIZE");
 	        Integer length = isJdbcTypeChar(type_code) ? size : null;
 	        Integer nullable_db = getRSInteger(cols_rs, "NULLABLE");
@@ -422,21 +415,42 @@ public class DatabaseMetaDataFetcher {
 	    }
 	}
 
+    private int getTypeCodeForDateOrTimestampColumn(int driver_reported_type_code,
+                                                    String db_native_type)
+	{
+    	String db_native_type_uc = db_native_type != null ? db_native_type.toUpperCase() : null;
+    	
+    	if ( "DATE".equals(db_native_type_uc) )
+    	{
+    		if ( dateMapping == DateMapping.DATES_AS_TIMESTAMPS )
+    			return Types.TIMESTAMP;
+    		else if ( dateMapping == DateMapping.DATES_AS_DATES )
+        		return Types.DATE;
+    	}
 
-    
-    public static void main(String[] args) // schema connection-properties-file output-file 
+    	return driver_reported_type_code;
+	}
+
+
+	public static void main(String[] args) // schema connection-properties-file output-file 
     {
         if ( args.length < 2 )
         {
-            System.err.println("Expected arguments: [schema] connection-properties-file output-file");
+            System.err.println("Expected arguments: [-DATES_AS_DRIVER_REPORTED|-DATES_AS_TIMESTAMPS|-DATES_AS_DATES] (schema|*any-owners*) connection-properties-file output-file");
             System.exit(1);
         }
         
         int arg_ix = 0;
         
-        String schema = null;
-        if ( args.length == 3 )
-        	schema = args[arg_ix++];
+        DateMapping date_mapping;
+        if ( args.length == 4 )
+        	date_mapping = DateMapping.valueOf(args[arg_ix++].substring(1));
+        else
+        	date_mapping = DateMapping.DATES_AS_DRIVER_REPORTED;
+        
+        String schema = args[arg_ix++];
+        if ( schema.equals("*any-owners*") )
+        	schema = null;
         String props_file_path = args[arg_ix++];
         String output_file_path = args[arg_ix++];
 
@@ -466,7 +480,7 @@ public class DatabaseMetaDataFetcher {
             
             conn = DriverManager.getConnection(conn_str, user, password);
             
-            DatabaseMetaDataFetcher mdfetcher = new DatabaseMetaDataFetcher();
+            DatabaseMetaDataFetcher mdfetcher = new DatabaseMetaDataFetcher(date_mapping);
             
             DBMD md = mdfetcher.fetchMetaData(conn.getMetaData(), schema, true, true, true, true);
 
