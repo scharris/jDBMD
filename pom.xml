@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>gov.fda.nctr</groupId>
   <artifactId>dbmd</artifactId>
-  <version>1.0.5-SNAPSHOT</version>
+  <version>1.0.6-SNAPSHOT</version>
   <name>Database Metadata Access Library</name>
   
 	<distributionManagement>

@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.sql.*;
 import java.util.*;
+import java.util.regex.Pattern;
 
 
 public class DatabaseMetaDataFetcher {
@@ -17,7 +18,7 @@ public class DatabaseMetaDataFetcher {
 	
 	DateMapping dateMapping;
 	
-    
+	
     public DatabaseMetaDataFetcher()
     {
     	this(DateMapping.DATES_AS_DRIVER_REPORTED);
@@ -35,38 +36,42 @@ public class DatabaseMetaDataFetcher {
     }
     
     
+    
     public DBMD fetchMetaData(Connection conn,
                               String schema,
                               boolean incl_tables,
                               boolean incl_views,
                               boolean incl_fields,
-                              boolean incl_fks) throws SQLException
+                              boolean incl_fks,
+                              Pattern exclude_rels_pat) throws SQLException
     {
     	return fetchMetaData(conn.getMetaData(),
     	                     schema,
     	                     incl_tables,
     	                     incl_views,
     	                     incl_fields,
-    	                     incl_fks);
+    	                     incl_fks,
+    	                     exclude_rels_pat);
     }
-    
+
 
     public DBMD fetchMetaData(DatabaseMetaData dbmd,
                               String schema,
                               boolean incl_tables,
                               boolean incl_views,
                               boolean incl_fields,
-                              boolean incl_fks) throws SQLException
+                              boolean incl_fks,
+                              Pattern exclude_rels_pat) throws SQLException
     {
         CaseSensitivity case_sens = getDatabaseCaseSensitivity(dbmd);
 
         schema = normalizeDatabaseIdentifier(schema, case_sens);
 
-        List<RelDescr> rel_descrs = fetchRelationDescriptions(dbmd, schema, incl_tables, incl_views);
+        List<RelDescr> rel_descrs = fetchRelationDescriptions(dbmd, schema, incl_tables, incl_views, exclude_rels_pat);
         
         List<RelMetaData> rel_mds = incl_fields ? fetchRelationMetaDatas(rel_descrs, schema, dbmd) : null;
         
-        List<ForeignKey> fks = fetchForeignKeys(schema, dbmd);
+        List<ForeignKey> fks = fetchForeignKeys(schema, dbmd, exclude_rels_pat);
         
         return new DBMD(schema, rel_mds, fks, case_sens);
     }
@@ -75,18 +80,21 @@ public class DatabaseMetaDataFetcher {
     public List<RelDescr> fetchRelationDescriptions(Connection conn,
                                                     String schema,
                                                     boolean incl_tables,
-                                                    boolean incl_views) throws SQLException
+                                                    boolean incl_views,
+                                                    Pattern exclude_rels_pat) throws SQLException
     {
         return fetchRelationDescriptions(conn.getMetaData(),
                                          schema,
                                          incl_tables,
-                                         incl_views);
+                                         incl_views,
+                                         exclude_rels_pat);
     }
     
     public List<RelDescr> fetchRelationDescriptions(DatabaseMetaData dbmd,
                                                     String schema,
                                                     boolean incl_tables,
-                                                    boolean incl_views) throws SQLException
+                                                    boolean incl_views,
+                                                    Pattern exclude_rels_pat) throws SQLException
     {
         List<RelDescr> rel_descrs = new ArrayList<RelDescr>();
         
@@ -103,9 +111,15 @@ public class DatabaseMetaDataFetcher {
 
         while (rs.next())
         {
-            rel_descrs.add(new RelDescr(new RelId(rs.getString("TABLE_CAT"),rs.getString("TABLE_SCHEM"),rs.getString("TABLE_NAME")),
-                                                  rs.getString("TABLE_TYPE").toLowerCase().equals("table") ? RelType.Table : RelType.View,
-                                                  rs.getString("REMARKS")));
+        	RelId relid = new RelId(rs.getString("TABLE_CAT"), rs.getString("TABLE_SCHEM"), rs.getString("TABLE_NAME"));
+        	
+        	if ( exclude_rels_pat == null ||
+        		 !exclude_rels_pat.matcher(relid.getIdString()).matches() )
+        	{
+        		rel_descrs.add(new RelDescr(relid,
+        		                            rs.getString("TABLE_TYPE").toLowerCase().equals("table") ? RelType.Table : RelType.View,
+        		                            rs.getString("REMARKS")));
+        	}
         }
 
         return rel_descrs;
@@ -142,9 +156,9 @@ public class DatabaseMetaDataFetcher {
             {
                 RelId rel_id = new RelId(cols_rs.getString("TABLE_CAT"), cols_rs.getString("TABLE_SCHEM"), cols_rs.getString("TABLE_NAME"));
 
-                RelDescr rel_descr = rel_descrs_by_relid.get(rel_id);
+                RelDescr rel_descr = rel_descrs_by_relid.get(rel_id); // may be null if this relation is not in the passed rel_descrs list.
                 
-                if ( rel_descr.getRelationType() != null )
+                if ( rel_descr != null && rel_descr.getRelationType() != null )
                 {
                     Field f = makeField(cols_rs, dbmd);
                     
@@ -186,12 +200,16 @@ public class DatabaseMetaDataFetcher {
         }
     }
     
-    public List<ForeignKey> fetchForeignKeys(String schema, Connection conn) throws SQLException
+    public List<ForeignKey> fetchForeignKeys(String schema, 
+                                             Connection conn,
+                                             Pattern exclude_rels_pat) throws SQLException
     {
-        return fetchForeignKeys(schema, conn.getMetaData());
+        return fetchForeignKeys(schema, conn.getMetaData(), exclude_rels_pat);
     }
     
-    public List<ForeignKey> fetchForeignKeys(String schema, DatabaseMetaData dbmd) throws SQLException
+    public List<ForeignKey> fetchForeignKeys(String schema,
+                                             DatabaseMetaData dbmd,
+                                             Pattern exclude_rels_pat) throws SQLException
     {
         List<ForeignKey> fks = new ArrayList<ForeignKey>();
 
@@ -210,9 +228,14 @@ public class DatabaseMetaDataFetcher {
                 if (comp_num == 1)
                 {
                     // If new fk starting then finalize the one we were accumulating
-                    if (comps != null)
+                    if (comps != null &&
+                    	(exclude_rels_pat == null ||
+                    	  (!exclude_rels_pat.matcher(src_rel.getIdString()).matches() && 
+                           !exclude_rels_pat.matcher(tgt_rel.getIdString()).matches())))
+                    {
                         fks.add(new ForeignKey(src_rel, tgt_rel, comps));
-
+                    }
+                    
                     src_rel = new RelId(fk_rs.getString("FKTABLE_CAT"), fk_rs.getString("FKTABLE_SCHEM"), fk_rs.getString("FKTABLE_NAME"));
                     tgt_rel = new RelId(fk_rs.getString("PKTABLE_CAT"), fk_rs.getString("PKTABLE_SCHEM"), fk_rs.getString("PKTABLE_NAME"));
                     
@@ -226,7 +249,14 @@ public class DatabaseMetaDataFetcher {
             }
 
             if (comps != null)
-                fks.add(new ForeignKey(src_rel, tgt_rel, comps));
+            {
+            	if ( exclude_rels_pat == null ||
+            		 (!exclude_rels_pat.matcher(src_rel.getIdString()).matches() && 
+            		  !exclude_rels_pat.matcher(tgt_rel.getIdString()).matches()) )
+            	{
+            		fks.add(new ForeignKey(src_rel, tgt_rel, comps));
+            	}
+            }
         }
         finally
         {
@@ -362,6 +392,8 @@ public class DatabaseMetaDataFetcher {
             return "BLOB";
         case Types.CLOB:
             return "CLOB";
+        case Types.SQLXML:
+        	return "SQLXML";
         }
         return "unknown[" + jdbc_type + "]";
     }
@@ -382,8 +414,13 @@ public class DatabaseMetaDataFetcher {
 	        String name = cols_rs.getString("COLUMN_NAME");
 	        Integer type_code = getRSInteger(cols_rs, "DATA_TYPE");
 	        String db_native_type_name = cols_rs.getString("TYPE_NAME");
+	        
+	        // Handle special cases/conversions for type_code
 	        if ( type_code == Types.DATE || type_code == Types.TIMESTAMP )
 	        	type_code = getTypeCodeForDateOrTimestampColumn(type_code, db_native_type_name);
+	        else if ( "XMLTYPE".equals(db_native_type_name)  || "SYS.XMLTYPE".equals(db_native_type_name) )
+	        	type_code = Types.SQLXML; // Oracle uses proprietary "OPAQUE" code of 2007 as of 11.2, should be Types.SQLXML = 2009.
+	        
 	        Integer size = getRSInteger(cols_rs, "COLUMN_SIZE");
 	        Integer length = isJdbcTypeChar(type_code) ? size : null;
 	        Integer nullable_db = getRSInteger(cols_rs, "NULLABLE");
@@ -395,6 +432,7 @@ public class DatabaseMetaDataFetcher {
 	        Integer radix = isJdbcTypeNumeric(type_code) ? getRSInteger(cols_rs, "NUM_PREC_RADIX") : null;
 	        Integer pk_part_num = pkseqnums_by_name.get(name);
 	        String comment = cols_rs.getString("REMARKS");
+	        
 	        
 	        return new Field(new RelId(cols_rs.getString("TABLE_CAT"), cols_rs.getString("TABLE_SCHEM"), cols_rs.getString("TABLE_NAME")),
 	                         name,
@@ -432,25 +470,28 @@ public class DatabaseMetaDataFetcher {
 	}
 
 
-	public static void main(String[] args) // schema connection-properties-file output-file 
+	public static void main(String[] args) throws Exception 
     {
+		DateMapping date_mapping = null;
+		String rels_owner = null;
+		
         if ( args.length < 2 )
         {
-            System.err.println("Expected arguments: [-DATES_AS_DRIVER_REPORTED|-DATES_AS_TIMESTAMPS|-DATES_AS_DATES] (schema|*any-owners*) connection-properties-file output-file");
+            System.err.println("Expected arguments:\n" +
+            		"	[(-DATES_AS_DRIVER_REPORTED|-DATES_AS_TIMESTAMPS|-DATES_AS_DATES) (schema|*any-owners*)] properties-file output-file\n" +
+            		"or\n" +
+            		"	[(schema|*any-owners*)] properties-file output-file");
             System.exit(1);
         }
         
         int arg_ix = 0;
         
-        DateMapping date_mapping;
         if ( args.length == 4 )
         	date_mapping = DateMapping.valueOf(args[arg_ix++].substring(1));
-        else
-        	date_mapping = DateMapping.DATES_AS_DRIVER_REPORTED;
         
-        String schema = args[arg_ix++];
-        if ( schema.equals("*any-owners*") )
-        	schema = null;
+        if ( args.length == 3 )
+        	rels_owner = args[arg_ix++];
+           
         String props_file_path = args[arg_ix++];
         String output_file_path = args[arg_ix++];
 
@@ -467,6 +508,25 @@ public class DatabaseMetaDataFetcher {
             String user = props.getProperty("user");
             String password = props.getProperty("password");
             
+            if ( date_mapping == null )
+            {
+            	String date_mapping_str = props.getProperty("date-mapping");
+            	if ( date_mapping_str != null )
+            		date_mapping = DateMapping.valueOf(date_mapping_str);
+            	else if ( date_mapping == null )
+            		date_mapping = DateMapping.DATES_AS_DRIVER_REPORTED;
+            }
+            
+            if ( rels_owner == null )
+            	rels_owner = props.getProperty("relations-owner");
+            
+            if ( rels_owner.equals("*any-owners*") )
+            	rels_owner = null;
+            
+            String exclude_rels_regex = props.getProperty("exclude-relations-fqname-regex");
+            Pattern exclude_rels_pat = exclude_rels_regex != null ? Pattern.compile(exclude_rels_regex) : null;
+
+            
             if ( conn_str == null )
                 throw new IllegalArgumentException("No jdbc-connect-url property found in config file.");
             if ( user == null )
@@ -482,20 +542,18 @@ public class DatabaseMetaDataFetcher {
             
             DatabaseMetaDataFetcher mdfetcher = new DatabaseMetaDataFetcher(date_mapping);
             
-            DBMD md = mdfetcher.fetchMetaData(conn.getMetaData(), schema, true, true, true, true);
+            DBMD md = mdfetcher.fetchMetaData(conn.getMetaData(), rels_owner, true, true, true, true, exclude_rels_pat);
 
             FileOutputStream os = new FileOutputStream(output_file_path);
             
             md.writeXML(os);
             
             os.close();
-            
-            System.exit(0);
         }
         catch(Exception e)
         {
         	e.printStackTrace();
-            System.exit(1);
+        	throw e;
         }
     }
 

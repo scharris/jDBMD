@@ -28,9 +28,9 @@ public class RelId {
     
     public String getIdString()
     {
-        return ((catalog != null ? "[" + catalog + "]" : "") +
+        return (catalog != null ? "[" + catalog + "]" : "") +
                (schema != null ? schema + "." : "") +
-               name).toLowerCase();
+               name;
     }
     
     public String toString()
