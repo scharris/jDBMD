@@ -468,31 +468,31 @@ public class DatabaseMetaDataFetcher {
 
     	return driver_reported_type_code;
 	}
+    
+    // Get the property value for the first contained key, or null.
+    private static String getProperty(Properties p, String... keys)
+    {
+    	for(String key: keys)
+    	{
+    		if ( p.containsKey(key) )
+    			return p.getProperty(key);
+    	}
+    	return null;
+    }
 
 
 	public static void main(String[] args) throws Exception 
     {
-		DateMapping date_mapping = null;
-		String rels_owner = null;
-		
-        if ( args.length < 2 )
+        if ( args.length < 3 )
         {
-            System.err.println("Expected arguments:\n" +
-            		"	[(-DATES_AS_DRIVER_REPORTED|-DATES_AS_TIMESTAMPS|-DATES_AS_DATES) (schema|*any-owners*)] properties-file output-file\n" +
-            		"or\n" +
-            		"	[(schema|*any-owners*)] properties-file output-file");
+            System.err.println("Expected arguments: jdbc-properties-file dbmd-properties-file output-file");
             System.exit(1);
         }
         
         int arg_ix = 0;
         
-        if ( args.length == 4 )
-        	date_mapping = DateMapping.valueOf(args[arg_ix++].substring(1));
-        
-        if ( args.length == 3 )
-        	rels_owner = args[arg_ix++];
-           
-        String props_file_path = args[arg_ix++];
+        String jdbc_props_file_path = args[arg_ix++];
+        String dbmd_props_file_path = args[arg_ix++];
         String output_file_path = args[arg_ix++];
 
         Properties props = new Properties();
@@ -501,32 +501,25 @@ public class DatabaseMetaDataFetcher {
         
         try
         {
-            props.load(new FileInputStream(props_file_path));
+        	props.load(new FileInputStream(jdbc_props_file_path));
+            if ( !jdbc_props_file_path.equals(dbmd_props_file_path) )
+            	props.load(new FileInputStream(dbmd_props_file_path));
             
-            String conn_str = props.getProperty("jdbc-connect-url");
-            String driver_classname = props.getProperty("jdbc-driver-class");
-            String user = props.getProperty("user");
-            String password = props.getProperty("password");
+            String conn_str = getProperty(props, "jdbc.url", "jdbc-connect-url");
+            String driver_classname = getProperty(props, "jdbc.driverClassName", "jdbc-driver-class");
+            String user = getProperty(props, "jdbc.username", "user");
+            String password = getProperty(props, "jdbc.password", "password");
             
-            if ( date_mapping == null )
-            {
-            	String date_mapping_str = props.getProperty("date-mapping");
-            	if ( date_mapping_str != null )
-            		date_mapping = DateMapping.valueOf(date_mapping_str);
-            	else if ( date_mapping == null )
-            		date_mapping = DateMapping.DATES_AS_DRIVER_REPORTED;
-            }
+            String date_mapping_str = props.getProperty("date-mapping");
+            DateMapping date_mapping = date_mapping_str != null ? DateMapping.valueOf(date_mapping_str) : DateMapping.DATES_AS_DRIVER_REPORTED;
             
-            if ( rels_owner == null )
-            	rels_owner = props.getProperty("relations-owner");
-            
+            String rels_owner = props.getProperty("relations-owner");
             if ( rels_owner.equals("*any-owners*") )
             	rels_owner = null;
             
             String exclude_rels_regex = props.getProperty("exclude-relations-fqname-regex");
             Pattern exclude_rels_pat = exclude_rels_regex != null ? Pattern.compile(exclude_rels_regex) : null;
 
-            
             if ( conn_str == null )
                 throw new IllegalArgumentException("No jdbc-connect-url property found in config file.");
             if ( user == null )
