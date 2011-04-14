@@ -31,8 +31,22 @@ public class DBMD {
 
   @XmlAttribute(name="requested-owning-schema-name")
   String requestedOwningSchemaName;
+
   @XmlAttribute(name="case-sensitivity")
   CaseSensitivity caseSensitivity;
+
+  @XmlAttribute(name="dbms-name")
+  String dbmsName;
+
+  @XmlAttribute(name="dbms-version")
+  String dbmsVersion;
+
+  @XmlAttribute(name="dbms-major-version")
+  int dbmsMajorVersion;
+
+  @XmlAttribute(name="dbms-minor-version")
+  int dbmsMinorVersion;
+
   
   @XmlElementWrapper(name = "relation-metadatas")
   @XmlElement(name="rel-md")
@@ -60,13 +74,21 @@ public class DBMD {
   public DBMD(String owningSchemaName,
               List<RelMetaData> relMetaDatas,
               List<ForeignKey> foreignKeys,
-              CaseSensitivity caseSensitivity)
+              CaseSensitivity caseSensitivity,
+              String dbms_name,
+              String dbms_ver_str,
+              int dbms_major_ver,
+              int dbms_minor_ver)
   {
 	  super();
 	  this.requestedOwningSchemaName = owningSchemaName;
 	  this.relMetaDatas = Collections.unmodifiableList(new ArrayList<RelMetaData>(relMetaDatas));
 	  this.foreignKeys = Collections.unmodifiableList(new ArrayList<ForeignKey>(foreignKeys));
 	  this.caseSensitivity = caseSensitivity;
+	  this.dbmsName = dbms_name;
+	  this.dbmsVersion = dbms_ver_str;
+	  this.dbmsMajorVersion = dbms_major_ver;
+	  this.dbmsMinorVersion = dbms_minor_ver;
   }
 
   // No-args constructor for JAXB.
@@ -82,7 +104,28 @@ public class DBMD {
   {
 	  return caseSensitivity;
   }
+  
+  public String getDbmsName()
+  {
+	  return dbmsName;
+  }
+  
+  public String getDbmsVersion()
+  {
+	  return dbmsVersion;
+  }
+  
+  public int getDbmsMajorVersion()
+  {
+	  return dbmsMajorVersion;
+  }
 
+  public int getDbmsMinorVersion()
+  {
+	  return dbmsMinorVersion;
+  }
+
+  
   public List<RelMetaData> getRelationMetaDatas()
   {
 	  return relMetaDatas;

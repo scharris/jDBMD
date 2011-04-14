@@ -73,7 +73,12 @@ public class DatabaseMetaDataFetcher {
         
         List<ForeignKey> fks = fetchForeignKeys(schema, dbmd, exclude_rels_pat);
         
-        return new DBMD(schema, rel_mds, fks, case_sens);
+        String dbms_name = dbmd.getDatabaseProductName();
+        String dbms_ver_str = dbmd.getDatabaseProductVersion();
+        int dbms_major_ver = dbmd.getDatabaseMajorVersion();
+        int dbms_minor_ver = dbmd.getDatabaseMinorVersion();
+        
+        return new DBMD(schema, rel_mds, fks, case_sens, dbms_name, dbms_ver_str, dbms_major_ver, dbms_minor_ver);
     }
     
     
