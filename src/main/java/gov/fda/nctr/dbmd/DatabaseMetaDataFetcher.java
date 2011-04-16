@@ -488,9 +488,21 @@ public class DatabaseMetaDataFetcher {
 
 	public static void main(String[] args) throws Exception 
     {
-        if ( args.length < 2 )
+		if ( args.length < 2 )
         {
             System.err.println("Expected arguments: jdbc-properties-file [dbmd-properties-file] output-file");
+
+            System.err.println("jdbc properties file properties:\n  " +
+            		"  jdbc-driver-class\n" +
+            		"  jdbc-connect-url\n" +
+            		"  user\n" +
+            		"  password\n");
+
+            System.err.println("dbmd properties file properties:\n  " +
+            		"  date-mapping (DATES_AS_DRIVER_REPORTED | DATES_AS_TIMESTAMPS | DATES_AS_DATES)\n" +
+            		"  relations-owner (schema name | *any-owners*)\n" +
+            		"  exclude-relations-fqname-regex\n");
+
             System.exit(1);
         }
         
