@@ -488,16 +488,16 @@ public class DatabaseMetaDataFetcher {
 
 	public static void main(String[] args) throws Exception 
     {
-        if ( args.length < 3 )
+        if ( args.length < 2 )
         {
-            System.err.println("Expected arguments: jdbc-properties-file dbmd-properties-file output-file");
+            System.err.println("Expected arguments: jdbc-properties-file [dbmd-properties-file] output-file");
             System.exit(1);
         }
         
         int arg_ix = 0;
         
         String jdbc_props_file_path = args[arg_ix++];
-        String dbmd_props_file_path = args[arg_ix++];
+        String dbmd_props_file_path = args.length == 3 ? args[arg_ix++] : null;
         String output_file_path = args[arg_ix++];
 
         Properties props = new Properties();
@@ -507,7 +507,7 @@ public class DatabaseMetaDataFetcher {
         try
         {
         	props.load(new FileInputStream(jdbc_props_file_path));
-            if ( !jdbc_props_file_path.equals(dbmd_props_file_path) )
+            if ( dbmd_props_file_path != null && !jdbc_props_file_path.equals(dbmd_props_file_path) )
             	props.load(new FileInputStream(dbmd_props_file_path));
             
             String conn_str = getProperty(props, "jdbc.url", "jdbc-connect-url");
@@ -519,7 +519,7 @@ public class DatabaseMetaDataFetcher {
             DateMapping date_mapping = date_mapping_str != null ? DateMapping.valueOf(date_mapping_str) : DateMapping.DATES_AS_DRIVER_REPORTED;
             
             String rels_owner = props.getProperty("relations-owner");
-            if ( rels_owner.equals("*any-owners*") )
+            if ( "*any-owners*".equals(rels_owner) )
             	rels_owner = null;
             
             String exclude_rels_regex = props.getProperty("exclude-relations-fqname-regex");
