@@ -5,45 +5,40 @@ import java.sql.Types;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Field {
 
-	@XmlElement(name="rel-id")
-    RelId relId;
-    
     @XmlAttribute
     String name;
 
     @XmlAttribute(name="jdbc-type-code")
     int jdbcTypeCode;
-    
+
     @XmlAttribute(name="db-type-name")
     String dbTypeName;
 
     @XmlAttribute
     Integer length;
-    
+
     @XmlAttribute
     Integer precision;
-    
+
     @XmlAttribute(name="fractional-digits")
     Integer fractionalDigits;
-    
+
     @XmlAttribute
     Integer radix;
-    
+
     @XmlAttribute(name="nullable")
     Boolean isNullable;
 
     @XmlAttribute(name="pk-part-num")
     Integer pkPartNum;
-    
+
     String comment;
 
-    public Field(RelId relId,
-                 String name,
+    public Field(String name,
                  int jdbcTypeCode,
                  String dbTypeName,
                  Integer length,
@@ -54,7 +49,6 @@ public class Field {
                  Integer pkPartNum,
                  String comment)
     {
-        this.relId = relId;
         this.name = name;
         this.jdbcTypeCode = jdbcTypeCode;
         this.dbTypeName = dbTypeName;
@@ -66,14 +60,8 @@ public class Field {
         this.pkPartNum = pkPartNum;
         this.comment = comment;
     }
-    
+
     protected Field() {}
-
-    public RelId getRelationId()
-    {
-        return relId;
-    }
-
 
     public String getName()
     {
@@ -90,8 +78,8 @@ public class Field {
     {
         return dbTypeName;
     }
-    
-	public Integer getLength()
+
+    public Integer getLength()
     {
         return length;
     }
@@ -125,22 +113,22 @@ public class Field {
     {
         return comment;
     }
-    
+
     public boolean isNumericType()
     {
-    	return isJdbcTypeNumeric(jdbcTypeCode);
+        return isJdbcTypeNumeric(jdbcTypeCode);
     }
-    
+
     public boolean isCharacterType()
     {
-    	return isJdbcTypeChar(jdbcTypeCode);
+        return isJdbcTypeChar(jdbcTypeCode);
     }
-    
+
     public static boolean isJdbcTypeNumeric(Integer jdbc_type)
     {
-       	if ( jdbc_type == null )
-    		return false;
-       	
+           if ( jdbc_type == null )
+            return false;
+
         switch (jdbc_type)
         {
         case Types.TINYINT:
@@ -157,12 +145,12 @@ public class Field {
             return false;
         }
     }
-    
+
     public static boolean isJdbcTypeChar(Integer jdbc_type)
     {
-    	if ( jdbc_type == null )
-    		return false;
-    	
+        if ( jdbc_type == null )
+            return false;
+
         switch (jdbc_type)
         {
         case Types.CHAR:
