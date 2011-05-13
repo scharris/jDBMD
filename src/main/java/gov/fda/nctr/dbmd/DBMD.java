@@ -94,6 +94,7 @@ public class DBMD {
 
 
   // No-args constructor for JAXB.
+
   DBMD() {}
 
 
@@ -630,4 +631,3 @@ public class DBMD {
       return readXML(is, false);
   }
 }
-
