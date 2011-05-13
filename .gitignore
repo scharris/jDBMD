@@ -5,3 +5,5 @@
 build
 dbmd.jar
 target
+outgoing_patches/
+DBMD_NOTES&TODOs.txt

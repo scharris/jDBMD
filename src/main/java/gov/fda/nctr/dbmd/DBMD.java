@@ -66,9 +66,9 @@ public class DBMD {
 
   @XmlEnum
   public enum CaseSensitivity { INSENSITIVE_STORED_LOWER,
-                                  INSENSITIVE_STORED_UPPER,
-                                  INSENSITIVE_STORED_MIXED,
-                                  SENSITIVE }
+                                INSENSITIVE_STORED_UPPER,
+                                INSENSITIVE_STORED_MIXED,
+                                SENSITIVE }
 
   public enum ForeignKeyScope { REGISTERED_TABLES_ONLY, ALL_FKS }
 
@@ -94,7 +94,7 @@ public class DBMD {
 
 
   // No-args constructor for JAXB.
-  protected DBMD() {}
+  DBMD() {}
 
 
   public String getRequestedOwningSchemaName()
@@ -609,24 +609,19 @@ public class DBMD {
 
   public void writeXML(OutputStream os) throws JAXBException, IOException
   {
-      JAXBContext context = JAXBContext.newInstance(getClass().getPackage().getName(), DBMD.class.getClassLoader());
+      JAXBContext context = JAXBContext.newInstance(getClass());
       Marshaller m = context.createMarshaller();
-      m.setProperty( Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE );
+      m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
       m.marshal(this, os);
       os.flush();
   }
 
   public static DBMD readXML(InputStream is, boolean close_stream) throws JAXBException, IOException
   {
-      String packageName = DBMD.class.getPackage().getName();
-
-      Unmarshaller u = JAXBContext.newInstance(packageName, DBMD.class.getClassLoader()).createUnmarshaller();
-
+      Unmarshaller u = JAXBContext.newInstance(DBMD.class).createUnmarshaller();
       DBMD dbmd = (DBMD)u.unmarshal(is);
-
       if ( close_stream )
           is.close();
-
       return dbmd;
   }
 
