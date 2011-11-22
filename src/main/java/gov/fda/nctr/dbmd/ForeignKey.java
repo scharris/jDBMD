@@ -1,5 +1,6 @@
 package gov.fda.nctr.dbmd;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -12,7 +13,7 @@ import javax.xml.bind.annotation.XmlElement;
 
 
 @XmlAccessorType(XmlAccessType.FIELD)
-public class ForeignKey {
+public class ForeignKey implements Serializable {
 
     @XmlElement(name="src-rel")
     RelId srcRel;
@@ -161,5 +162,7 @@ public class ForeignKey {
             return pkFieldName;
         }
     }
+
+    private static final long serialVersionUID = 1L;
 }
 

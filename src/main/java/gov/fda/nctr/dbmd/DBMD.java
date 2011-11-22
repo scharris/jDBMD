@@ -3,6 +3,7 @@ package gov.fda.nctr.dbmd;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,9 +29,9 @@ import javax.xml.bind.annotation.XmlTransient;
 
 @XmlRootElement(name="database-metadata", namespace="http://nctr.fda.gov/dbmd")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class DBMD {
+public class DBMD implements Serializable {
 
-  @XmlAttribute(name="requested-owning-schema-name")
+@XmlAttribute(name="requested-owning-schema-name")
   String requestedOwningSchemaName;
 
   @XmlAttribute(name="case-sensitivity")
@@ -630,4 +631,6 @@ public class DBMD {
   {
       return readXML(is, false);
   }
+
+  private static final long serialVersionUID = 1L;
 }

@@ -7,12 +7,13 @@ import gov.fda.nctr.dbmd.RelMetaData.RelType;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.Serializable;
 import java.sql.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
 
-public class DatabaseMetaDataFetcher {
+public class DatabaseMetaDataFetcher implements Serializable {
 
     public static enum DateMapping { DATES_AS_DRIVER_REPORTED, DATES_AS_TIMESTAMPS, DATES_AS_DATES }
 
@@ -566,4 +567,5 @@ public class DatabaseMetaDataFetcher {
         }
     }
 
+    private static final long serialVersionUID = 1L;
 }

@@ -1,58 +1,60 @@
 package gov.fda.nctr.dbmd;
 
+import java.io.Serializable;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 
 
 @XmlAccessorType(XmlAccessType.FIELD)
-public class RelId {
-    
+public class RelId implements Serializable {
+
     @XmlAttribute
     String catalog;
-    
+
     @XmlAttribute
     String schema;
-    
+
     @XmlAttribute
     String name;
-    
+
     public RelId(String catalog, String schema, String name)
     {
         this.catalog = catalog;
         this.schema = schema;
         this.name = name;
     }
-    
+
     protected RelId() {}
-    
+
     public String getIdString()
     {
         return (catalog != null ? "[" + catalog + "]" : "") +
                (schema != null ? schema + "." : "") +
                name;
     }
-    
+
     public String toString()
     {
-    	return getIdString();
+        return getIdString();
     }
-    
+
     public String getCatalog()
     {
         return catalog;
     }
-    
+
     public String getSchema()
     {
         return schema;
     }
-    
+
     public String getName()
     {
         return name;
     }
-    
+
     public boolean equals(Object other)
     {
         if ( !(other instanceof RelId) )
@@ -65,16 +67,18 @@ public class RelId {
                    eq(name, o.name);
         }
     }
-    
+
     public int hashCode()
     {
         return (catalog != null ? catalog.hashCode() : 0) +
                (schema != null ? schema.hashCode() : 0) +
                name.hashCode();
     }
-    
+
     static boolean eq(Object o1, Object o2)
     {
         return (o1 == null && o2 == null) || o1.equals(o2);
     }
+
+    private static final long serialVersionUID = 1L;
 }

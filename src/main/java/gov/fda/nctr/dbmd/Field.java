@@ -1,5 +1,6 @@
 package gov.fda.nctr.dbmd;
 
+import java.io.Serializable;
 import java.sql.Types;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -7,7 +8,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Field {
+public class Field implements Serializable {
 
     @XmlAttribute
     String name;
@@ -162,4 +163,5 @@ public class Field {
         }
     }
 
+    private static final long serialVersionUID = 1L;
 }

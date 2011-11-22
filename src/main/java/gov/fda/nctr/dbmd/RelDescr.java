@@ -1,5 +1,7 @@
 package gov.fda.nctr.dbmd;
 
+import java.io.Serializable;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -9,15 +11,15 @@ import gov.fda.nctr.dbmd.RelMetaData.RelType;
 
 
 @XmlAccessorType(XmlAccessType.FIELD)
-public class RelDescr {
+public class RelDescr implements Serializable {
 
-	@XmlElement(name="rel-id")
+    @XmlElement(name="rel-id")
     private RelId relId;
-    
+
     @XmlAttribute(name="rel-type")
     private RelType relType;
-    
-	@XmlElement(name="rel-comment")
+
+    @XmlElement(name="rel-comment")
     private String relComment;
 
     public RelDescr(RelId relId, RelType relType, String relComment)
@@ -27,7 +29,7 @@ public class RelDescr {
         this.relType = relType;
         this.relComment = relComment;
     }
-    
+
     protected RelDescr() {}
 
     public RelId getRelationId()
@@ -44,4 +46,6 @@ public class RelDescr {
     {
         return relComment;
     }
+
+    private static final long serialVersionUID = 1L;
 }
