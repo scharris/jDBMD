@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -617,6 +619,25 @@ public class DBMD implements Serializable {
       m.marshal(this, os);
       os.flush();
   }
+
+  public void writeXML(Writer w) throws JAXBException, IOException
+  {
+      JAXBContext context = JAXBContext.newInstance(getClass());
+      Marshaller m = context.createMarshaller();
+      m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+      m.marshal(this, w);
+      w.flush();
+  }
+
+  public String toXMLString() throws JAXBException, IOException
+  {
+      StringWriter sw = new StringWriter();
+
+      writeXML(sw);
+
+      return sw.toString();
+  }
+
 
   public static DBMD readXML(InputStream is, boolean close_stream) throws JAXBException, IOException
   {
