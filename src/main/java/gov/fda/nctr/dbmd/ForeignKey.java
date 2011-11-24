@@ -133,15 +133,13 @@ public class ForeignKey implements Serializable {
 
 
     @XmlAccessorType(XmlAccessType.FIELD)
-    public static class Component {
-
+    public static class Component implements Serializable {
 
         @XmlAttribute(name="fk-field")
         String fkFieldName;
 
         @XmlAttribute(name="pk-field")
         String pkFieldName;
-
 
         public Component(String fk_name, String pk_name)
         {
@@ -161,6 +159,90 @@ public class ForeignKey implements Serializable {
         {
             return pkFieldName;
         }
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((fkFieldName == null) ? 0 : fkFieldName.hashCode());
+            result = prime * result + ((pkFieldName == null) ? 0 : pkFieldName.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Component other = (Component) obj;
+            if (fkFieldName == null)
+            {
+                if (other.fkFieldName != null)
+                    return false;
+            }
+            else if (!fkFieldName.equals(other.fkFieldName))
+                return false;
+            if (pkFieldName == null)
+            {
+                if (other.pkFieldName != null)
+                    return false;
+            }
+            else if (!pkFieldName.equals(other.pkFieldName))
+                return false;
+            return true;
+        }
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((components == null) ? 0 : components.hashCode());
+        result = prime * result + ((srcRel == null) ? 0 : srcRel.hashCode());
+        result = prime * result + ((tgtRel == null) ? 0 : tgtRel.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ForeignKey other = (ForeignKey) obj;
+        if (components == null)
+        {
+            if (other.components != null)
+                return false;
+        }
+        else if (!components.equals(other.components))
+            return false;
+        if (srcRel == null)
+        {
+            if (other.srcRel != null)
+                return false;
+        }
+        else if (!srcRel.equals(other.srcRel))
+            return false;
+        if (tgtRel == null)
+        {
+            if (other.tgtRel != null)
+                return false;
+        }
+        else if (!tgtRel.equals(other.tgtRel))
+            return false;
+        return true;
     }
 
     private static final long serialVersionUID = 1L;

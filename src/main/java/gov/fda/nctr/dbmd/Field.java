@@ -163,5 +163,101 @@ public class Field implements Serializable {
         }
     }
 
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((comment == null) ? 0 : comment.hashCode());
+        result = prime * result + ((dbTypeName == null) ? 0 : dbTypeName.hashCode());
+        result = prime * result + ((fractionalDigits == null) ? 0 : fractionalDigits.hashCode());
+        result = prime * result + ((isNullable == null) ? 0 : isNullable.hashCode());
+        result = prime * result + jdbcTypeCode;
+        result = prime * result + ((length == null) ? 0 : length.hashCode());
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + ((pkPartNum == null) ? 0 : pkPartNum.hashCode());
+        result = prime * result + ((precision == null) ? 0 : precision.hashCode());
+        result = prime * result + ((radix == null) ? 0 : radix.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Field other = (Field) obj;
+        if (comment == null)
+        {
+            if (other.comment != null)
+                return false;
+        }
+        else if (!comment.equals(other.comment))
+            return false;
+        if (dbTypeName == null)
+        {
+            if (other.dbTypeName != null)
+                return false;
+        }
+        else if (!dbTypeName.equals(other.dbTypeName))
+            return false;
+        if (fractionalDigits == null)
+        {
+            if (other.fractionalDigits != null)
+                return false;
+        }
+        else if (!fractionalDigits.equals(other.fractionalDigits))
+            return false;
+        if (isNullable == null)
+        {
+            if (other.isNullable != null)
+                return false;
+        }
+        else if (!isNullable.equals(other.isNullable))
+            return false;
+        if (jdbcTypeCode != other.jdbcTypeCode)
+            return false;
+        if (length == null)
+        {
+            if (other.length != null)
+                return false;
+        }
+        else if (!length.equals(other.length))
+            return false;
+        if (name == null)
+        {
+            if (other.name != null)
+                return false;
+        }
+        else if (!name.equals(other.name))
+            return false;
+        if (pkPartNum == null)
+        {
+            if (other.pkPartNum != null)
+                return false;
+        }
+        else if (!pkPartNum.equals(other.pkPartNum))
+            return false;
+        if (precision == null)
+        {
+            if (other.precision != null)
+                return false;
+        }
+        else if (!precision.equals(other.precision))
+            return false;
+        if (radix == null)
+        {
+            if (other.radix != null)
+                return false;
+        }
+        else if (!radix.equals(other.radix))
+            return false;
+        return true;
+    }
+
     private static final long serialVersionUID = 1L;
 }

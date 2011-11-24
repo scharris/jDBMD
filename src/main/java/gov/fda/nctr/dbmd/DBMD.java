@@ -33,7 +33,7 @@ import javax.xml.bind.annotation.XmlTransient;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class DBMD implements Serializable {
 
-@XmlAttribute(name="requested-owning-schema-name")
+  @XmlAttribute(name="requested-owning-schema-name")
   String requestedOwningSchemaName;
 
   @XmlAttribute(name="case-sensitivity")
@@ -60,12 +60,10 @@ public class DBMD implements Serializable {
   @XmlElement(name="foreign-key")
   List<ForeignKey> foreignKeys;
 
-  @XmlTransient
-  Map<RelId,RelMetaData> relMDsByRelId;
-  @XmlTransient
-  Map<RelId,List<ForeignKey>> fksByParentRelId;
-  @XmlTransient
-  Map<RelId,List<ForeignKey>> fksByChildRelId;
+  // derived data
+  transient Map<RelId,RelMetaData> relMDsByRelId;
+  transient Map<RelId,List<ForeignKey>> fksByParentRelId;
+  transient Map<RelId,List<ForeignKey>> fksByChildRelId;
 
   @XmlEnum
   public enum CaseSensitivity { INSENSITIVE_STORED_LOWER,
@@ -651,6 +649,78 @@ public class DBMD implements Serializable {
   public static DBMD readXML(InputStream is) throws JAXBException, IOException
   {
       return readXML(is, false);
+  }
+
+
+  @Override
+  public int hashCode()
+  {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((caseSensitivity == null) ? 0 : caseSensitivity.hashCode());
+      result = prime * result + dbmsMajorVersion;
+      result = prime * result + dbmsMinorVersion;
+      result = prime * result + ((dbmsName == null) ? 0 : dbmsName.hashCode());
+      result = prime * result + ((dbmsVersion == null) ? 0 : dbmsVersion.hashCode());
+      result = prime * result + ((foreignKeys == null) ? 0 : foreignKeys.hashCode());
+      result = prime * result + ((relMetaDatas == null) ? 0 : relMetaDatas.hashCode());
+      result = prime * result + ((requestedOwningSchemaName == null) ? 0 : requestedOwningSchemaName.hashCode());
+      return result;
+  }
+
+
+  @Override
+  public boolean equals(Object obj)
+  {
+      if (this == obj)
+          return true;
+      if (obj == null)
+          return false;
+      if (getClass() != obj.getClass())
+          return false;
+      DBMD other = (DBMD) obj;
+      if (caseSensitivity != other.caseSensitivity)
+          return false;
+      if (dbmsMajorVersion != other.dbmsMajorVersion)
+          return false;
+      if (dbmsMinorVersion != other.dbmsMinorVersion)
+          return false;
+      if (dbmsName == null)
+      {
+          if (other.dbmsName != null)
+              return false;
+      }
+      else if (!dbmsName.equals(other.dbmsName))
+          return false;
+      if (dbmsVersion == null)
+      {
+          if (other.dbmsVersion != null)
+              return false;
+      }
+      else if (!dbmsVersion.equals(other.dbmsVersion))
+          return false;
+      if (foreignKeys == null)
+      {
+          if (other.foreignKeys != null)
+              return false;
+      }
+      else if (!foreignKeys.equals(other.foreignKeys))
+          return false;
+      if (relMetaDatas == null)
+      {
+          if (other.relMetaDatas != null)
+              return false;
+      }
+      else if (!relMetaDatas.equals(other.relMetaDatas))
+          return false;
+      if (requestedOwningSchemaName == null)
+      {
+          if (other.requestedOwningSchemaName != null)
+              return false;
+      }
+      else if (!requestedOwningSchemaName.equals(other.requestedOwningSchemaName))
+          return false;
+      return true;
   }
 
   private static final long serialVersionUID = 1L;
