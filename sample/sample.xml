@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<database-metadata xmlns="http://nctr.fda.gov/dbmd" dbms-minor-version="2" dbms-major-version="11" dbms-version="Oracle Database 11g Enterprise Edition Release 11.2.0.2.0 - Production&#xA;With the Partitioning, OLAP, Data Mining and Real Application Testing options" dbms-name="Oracle" case-sensitivity="INSENSITIVE_STORED_UPPER" requested-owning-schema-name="TCKB">
+    <relation-metadatas>
+        <rel-md rel-type="Table">
+            <rel-id name="ACCOUNT" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" length="32" db-type-name="VARCHAR2" jdbc-type-code="12" name="ID"/>
+                <field nullable="false" length="48" db-type-name="VARCHAR2" jdbc-type-code="12" name="EMAIL"/>
+                <field nullable="true" length="32" db-type-name="VARCHAR2" jdbc-type-code="12" name="FIRST_NAME"/>
+                <field nullable="true" length="32" db-type-name="VARCHAR2" jdbc-type-code="12" name="LAST_NAME"/>
+                <field nullable="true" length="16" db-type-name="VARCHAR2" jdbc-type-code="12" name="LOCALE"/>
+                <field nullable="true" length="32" db-type-name="VARCHAR2" jdbc-type-code="12" name="TIMEZONE"/>
+                <field nullable="true" length="48" db-type-name="VARCHAR2" jdbc-type-code="12" name="PASSWORD_PW"/>
+                <field nullable="true" length="20" db-type-name="VARCHAR2" jdbc-type-code="12" name="PASSWORD_SLT"/>
+                <field nullable="true" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="VALIDATED"/>
+                <field nullable="true" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="ADMIN"/>
+                <field nullable="true" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="DISABLED"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="CHEMICAL_STRUCTURE" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="SUBSTANCE_ID"/>
+                <field nullable="false" db-type-name="BLOB" jdbc-type-code="2004" name="BINGO_STRUCTURE"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="COMMENT" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="ID"/>
+                <field nullable="false" db-type-name="CLOB" jdbc-type-code="2005" name="COMMENT_TEXT"/>
+                <field nullable="false" length="32" db-type-name="VARCHAR2" jdbc-type-code="12" name="ACCOUNT_ID"/>
+                <field nullable="false" db-type-name="TIMESTAMP(6)" jdbc-type-code="93" name="CREATED"/>
+                <field nullable="true" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="PARENT_COMMENT_ID"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="CONCENTRATION" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="ID"/>
+                <field nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="SUBSTANCE_ID"/>
+                <field nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="CONCENTRATION_TYPE_ID"/>
+                <field nullable="true" length="4000" db-type-name="VARCHAR2" jdbc-type-code="12" name="METHOD"/>
+                <field nullable="true" length="500" db-type-name="VARCHAR2" jdbc-type-code="12" name="CHAR_VALUE_LOW"/>
+                <field nullable="true" length="500" db-type-name="VARCHAR2" jdbc-type-code="12" name="CHAR_VALUE_HIGH"/>
+                <field nullable="true" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="NUM_VALUE_LOW"/>
+                <field nullable="true" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="NUM_VALUE_HIGH"/>
+                <field nullable="true" length="200" db-type-name="VARCHAR2" jdbc-type-code="12" name="NUM_VALUE_UNITS"/>
+                <field nullable="true" length="4000" db-type-name="VARCHAR2" jdbc-type-code="12" name="FILTER_TYPE"/>
+                <field nullable="true" length="4000" db-type-name="VARCHAR2" jdbc-type-code="12" name="ANALYSIS_TECHNIQUE"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="CONCENTRATION_COMMENT" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="CONCENTRATION_ID"/>
+                <field pk-part-num="2" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="COMMENT_ID"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="CONCENTRATION_REFERENCE" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="CONCENTRATION_ID"/>
+                <field pk-part-num="2" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="REFERENCE_ID"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="CONCENTRATION_TYPE" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="ID"/>
+                <field nullable="false" length="50" db-type-name="VARCHAR2" jdbc-type-code="12" name="MEASURED_IN"/>
+                <field nullable="false" length="50" db-type-name="VARCHAR2" jdbc-type-code="12" name="RATIO_TYPE"/>
+                <field nullable="true" length="4000" db-type-name="VARCHAR2" jdbc-type-code="12" name="DESCRIPTION"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="FINDINGS_SUMMARY" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="ID"/>
+                <field nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="SUBSTANCE_ID"/>
+                <field nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="FINDING_TYPE_ID"/>
+                <field nullable="false" db-type-name="CLOB" jdbc-type-code="2005" name="SUMMARY_TEXT"/>
+                <field nullable="false" length="32" db-type-name="VARCHAR2" jdbc-type-code="12" name="ACCOUNT_ID"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="FINDINGS_SUMMARY_COMMENT" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="FINDINGS_SUMMARY_ID"/>
+                <field pk-part-num="2" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="COMMENT_ID"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="FINDINGS_SUMMARY_REFERENCE" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="FINDINGS_SUMMARY_ID"/>
+                <field pk-part-num="2" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="REFERENCE_ID"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="FINDING_TYPE" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="ID"/>
+                <field nullable="true" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="PARENT_ID"/>
+                <field nullable="false" length="50" db-type-name="VARCHAR2" jdbc-type-code="12" name="NAME"/>
+                <field nullable="true" length="35" db-type-name="VARCHAR2" jdbc-type-code="12" name="GLOBAL_ABBREVIATION"/>
+                <field nullable="true" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="SRC_TYPE"/>
+                <field nullable="true" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="DISPLAY_ORDER"/>
+                <field nullable="true" length="4000" db-type-name="VARCHAR2" jdbc-type-code="12" name="DESCRIPTION"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="REFERENCE" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="ID"/>
+                <field nullable="false" length="4000" db-type-name="VARCHAR2" jdbc-type-code="12" name="CITATION_TEXT"/>
+                <field nullable="true" length="6" db-type-name="VARCHAR2" jdbc-type-code="12" name="RODGMANN_PERFETTI_ID"/>
+                <field nullable="true" length="1" db-type-name="VARCHAR2" jdbc-type-code="12" name="RODGMANN_PERFETTI_SUB_ID"/>
+                <field nullable="true" length="500" db-type-name="VARCHAR2" jdbc-type-code="12" name="AFFILIATION"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="SUBSTANCE" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="ID"/>
+                <field nullable="false" length="1000" db-type-name="VARCHAR2" jdbc-type-code="12" name="NAME"/>
+                <field nullable="true" length="500" db-type-name="VARCHAR2" jdbc-type-code="12" name="SMILES"/>
+                <field nullable="true" length="500" db-type-name="VARCHAR2" jdbc-type-code="12" name="SMILES_BAD"/>
+                <field nullable="true" db-type-name="CLOB" jdbc-type-code="2005" name="MDL_MOL"/>
+                <field nullable="true" length="500" db-type-name="VARCHAR2" jdbc-type-code="12" name="MOLECULAR_FORMULA"/>
+                <field nullable="true" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="MOLECULAR_WEIGHT"/>
+                <field nullable="true" length="500" db-type-name="VARCHAR2" jdbc-type-code="12" name="STRUCTURE_IMAGE_URL"/>
+                <field nullable="true" length="11" db-type-name="VARCHAR2" jdbc-type-code="12" name="CAS"/>
+                <field nullable="true" length="20" db-type-name="VARCHAR2" jdbc-type-code="12" name="UNII"/>
+                <field nullable="true" length="30" db-type-name="VARCHAR2" jdbc-type-code="12" name="LOG_KOW"/>
+                <field nullable="true" length="30" db-type-name="VARCHAR2" jdbc-type-code="12" name="BOILING_POINT"/>
+                <field nullable="true" length="30" db-type-name="VARCHAR2" jdbc-type-code="12" name="MELTING_POINT"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="SUBSTANCE_COMMENT" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="SUBSTANCE_ID"/>
+                <field pk-part-num="2" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="COMMENT_ID"/>
+            </fields>
+        </rel-md>
+        <rel-md rel-type="Table">
+            <rel-id name="SUBSTANCE_REFERENCE" schema="TCKB"/>
+            <fields>
+                <field pk-part-num="1" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="SUBSTANCE_ID"/>
+                <field pk-part-num="2" nullable="false" radix="10" fractional-digits="-127" precision="0" db-type-name="NUMBER" jdbc-type-code="3" name="REFERENCE_ID"/>
+            </fields>
+        </rel-md>
+    </relation-metadatas>
+    <foreign-keys>
+        <foreign-key>
+            <src-rel name="CHEMICAL_STRUCTURE" schema="TCKB"/>
+            <tgt-rel name="SUBSTANCE" schema="TCKB"/>
+            <component pk-field="ID" fk-field="SUBSTANCE_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="COMMENT" schema="TCKB"/>
+            <tgt-rel name="ACCOUNT" schema="TCKB"/>
+            <component pk-field="ID" fk-field="ACCOUNT_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="COMMENT" schema="TCKB"/>
+            <tgt-rel name="COMMENT" schema="TCKB"/>
+            <component pk-field="ID" fk-field="PARENT_COMMENT_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="CONCENTRATION" schema="TCKB"/>
+            <tgt-rel name="CONCENTRATION_TYPE" schema="TCKB"/>
+            <component pk-field="ID" fk-field="CONCENTRATION_TYPE_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="CONCENTRATION" schema="TCKB"/>
+            <tgt-rel name="SUBSTANCE" schema="TCKB"/>
+            <component pk-field="ID" fk-field="SUBSTANCE_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="CONCENTRATION_COMMENT" schema="TCKB"/>
+            <tgt-rel name="COMMENT" schema="TCKB"/>
+            <component pk-field="ID" fk-field="COMMENT_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="CONCENTRATION_COMMENT" schema="TCKB"/>
+            <tgt-rel name="CONCENTRATION" schema="TCKB"/>
+            <component pk-field="ID" fk-field="CONCENTRATION_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="CONCENTRATION_REFERENCE" schema="TCKB"/>
+            <tgt-rel name="CONCENTRATION" schema="TCKB"/>
+            <component pk-field="ID" fk-field="CONCENTRATION_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="CONCENTRATION_REFERENCE" schema="TCKB"/>
+            <tgt-rel name="REFERENCE" schema="TCKB"/>
+            <component pk-field="ID" fk-field="REFERENCE_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="FINDINGS_SUMMARY" schema="TCKB"/>
+            <tgt-rel name="ACCOUNT" schema="TCKB"/>
+            <component pk-field="ID" fk-field="ACCOUNT_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="FINDINGS_SUMMARY" schema="TCKB"/>
+            <tgt-rel name="FINDING_TYPE" schema="TCKB"/>
+            <component pk-field="ID" fk-field="FINDING_TYPE_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="FINDINGS_SUMMARY" schema="TCKB"/>
+            <tgt-rel name="SUBSTANCE" schema="TCKB"/>
+            <component pk-field="ID" fk-field="SUBSTANCE_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="FINDINGS_SUMMARY_COMMENT" schema="TCKB"/>
+            <tgt-rel name="COMMENT" schema="TCKB"/>
+            <component pk-field="ID" fk-field="COMMENT_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="FINDINGS_SUMMARY_COMMENT" schema="TCKB"/>
+            <tgt-rel name="FINDINGS_SUMMARY" schema="TCKB"/>
+            <component pk-field="ID" fk-field="FINDINGS_SUMMARY_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="FINDINGS_SUMMARY_REFERENCE" schema="TCKB"/>
+            <tgt-rel name="FINDINGS_SUMMARY" schema="TCKB"/>
+            <component pk-field="ID" fk-field="FINDINGS_SUMMARY_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="FINDINGS_SUMMARY_REFERENCE" schema="TCKB"/>
+            <tgt-rel name="REFERENCE" schema="TCKB"/>
+            <component pk-field="ID" fk-field="REFERENCE_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="FINDING_TYPE" schema="TCKB"/>
+            <tgt-rel name="FINDING_TYPE" schema="TCKB"/>
+            <component pk-field="ID" fk-field="PARENT_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="SUBSTANCE_COMMENT" schema="TCKB"/>
+            <tgt-rel name="COMMENT" schema="TCKB"/>
+            <component pk-field="ID" fk-field="COMMENT_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="SUBSTANCE_COMMENT" schema="TCKB"/>
+            <tgt-rel name="SUBSTANCE" schema="TCKB"/>
+            <component pk-field="ID" fk-field="SUBSTANCE_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="SUBSTANCE_REFERENCE" schema="TCKB"/>
+            <tgt-rel name="REFERENCE" schema="TCKB"/>
+            <component pk-field="ID" fk-field="REFERENCE_ID"/>
+        </foreign-key>
+        <foreign-key>
+            <src-rel name="SUBSTANCE_REFERENCE" schema="TCKB"/>
+            <tgt-rel name="SUBSTANCE" schema="TCKB"/>
+            <component pk-field="ID" fk-field="SUBSTANCE_ID"/>
+        </foreign-key>
+    </foreign-keys>
+</database-metadata>

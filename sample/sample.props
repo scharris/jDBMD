@@ -1,0 +1,5 @@
+jdbc-connect-url=jdbc:oracle:thin:@localhost.oravm:1521:orcl
+jdbc-driver-class=oracle.jdbc.OracleDriver
+user=tckb
+password=tckb
+relations-owner=tckb

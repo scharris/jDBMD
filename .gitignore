@@ -1,10 +1,9 @@
 *.class
 .svn
-
-
 build
 dbmd.jar
 target
 outgoing_patches/
 DBMD_NOTES&TODOs.txt
 DBMD_COMMIT_NOTES&TODOs.txt
+sample/ojdbc*.jar
