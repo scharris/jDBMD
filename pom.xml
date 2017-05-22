@@ -10,11 +10,11 @@
   <distributionManagement>
     <repository>
       <id>nctr-maven-releases-repo</id>
-      <url>scpexe://ncsvmweb02.fda.gov:/var/www/devfiles/maven2-releases</url>
+      <url>scpexe://${nctr_releases_scp_target}</url>
     </repository>
     <snapshotRepository>
       <id>nctr-maven-snapshots-repo</id>
-      <url>scpexe://ncsvmweb02.fda.gov:/var/www/devfiles/maven2-snapshots</url>
+      <url>scpexe://${nctr_snapshots_scp_target}</url>
       <uniqueVersion>false</uniqueVersion>
     </snapshotRepository>
   </distributionManagement>
