@@ -19,6 +19,19 @@
     </snapshotRepository>
   </distributionManagement>
 
+  <repositories>
+    <repository>
+        <id>nctr-maven-releases-repo</id>
+        <name>NCTR Releases Repository</name>
+        <url>${nctr_releases_repo_url}</url>
+    </repository>
+    <repository>
+        <id>nctr-maven-snapshots-repo</id>
+        <name>NCTR Snapshots Repository</name>
+        <url>${nctr_snapshots_repo_url}</url>
+    </repository>
+  </repositories>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
