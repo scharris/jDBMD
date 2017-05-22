@@ -20,6 +20,7 @@ jdbc-driver-class=oracle.jdbc.OracleDriver
 user=mydbuser
 password=mypassword
 
+
 Then invoke the command like this:
 
   java -cp dbmd.jar:ojdbc6.jar gov.fda.nctr.dbmd.DatabaseMetaDataFetcher myschema connection.props myschema.xml
