@@ -26,7 +26,6 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 
 
 @XmlRootElement(name="database-metadata", namespace="http://nctr.fda.gov/dbmd")
@@ -34,36 +33,36 @@ import javax.xml.bind.annotation.XmlTransient;
 public class DBMD implements Serializable {
 
   @XmlAttribute(name="requested-owning-schema-name")
-  String requestedOwningSchemaName;
+  private String requestedOwningSchemaName;
 
   @XmlAttribute(name="case-sensitivity")
-  CaseSensitivity caseSensitivity;
+  private CaseSensitivity caseSensitivity;
 
   @XmlAttribute(name="dbms-name")
-  String dbmsName;
+  private String dbmsName;
 
   @XmlAttribute(name="dbms-version")
-  String dbmsVersion;
+  private String dbmsVersion;
 
   @XmlAttribute(name="dbms-major-version")
-  int dbmsMajorVersion;
+  private int dbmsMajorVersion;
 
   @XmlAttribute(name="dbms-minor-version")
-  int dbmsMinorVersion;
+  private int dbmsMinorVersion;
 
 
   @XmlElementWrapper(name = "relation-metadatas")
   @XmlElement(name="rel-md")
-  List<RelMetaData> relMetaDatas;
+  private List<RelMetaData> relMetaDatas;
 
   @XmlElementWrapper(name = "foreign-keys")
   @XmlElement(name="foreign-key")
-  List<ForeignKey> foreignKeys;
+  private List<ForeignKey> foreignKeys;
 
   // derived data
-  transient Map<RelId,RelMetaData> relMDsByRelId;
-  transient Map<RelId,List<ForeignKey>> fksByParentRelId;
-  transient Map<RelId,List<ForeignKey>> fksByChildRelId;
+  private transient Map<RelId,RelMetaData> relMDsByRelId;
+  private transient Map<RelId,List<ForeignKey>> fksByParentRelId;
+  private transient Map<RelId,List<ForeignKey>> fksByChildRelId;
 
   @XmlEnum
   public enum CaseSensitivity { INSENSITIVE_STORED_LOWER,
@@ -138,7 +137,7 @@ public class DBMD implements Serializable {
 
   public List<RelId> getRelationIds()
   {
-      List<RelId> relids = new ArrayList<RelId>();
+      List<RelId> relids = new ArrayList<>();
 
       for(RelMetaData relmd: relMetaDatas)
           relids.add(relmd.getRelationId());
@@ -171,7 +170,7 @@ public class DBMD implements Serializable {
       if ( rel_md == null )
           throw new IllegalArgumentException("Relation " + rel_id + " not found.");
 
-      List<String> field_names = new ArrayList<String>();
+      List<String> field_names = new ArrayList<>();
 
       for(Field f: rel_md.getFields() )
           field_names.add(alias != null ? alias + "." + f.getName() : f.getName());
@@ -278,7 +277,7 @@ public class DBMD implements Serializable {
 
       if ( fks_incl == ForeignKeyScope.REGISTERED_TABLES_ONLY )
       {
-          List<ForeignKey> res_filtered = new ArrayList<ForeignKey>();
+          List<ForeignKey> res_filtered = new ArrayList<>();
 
           for(ForeignKey fk: res)
               if ( getRelationMetaData(fk.getSourceRelationId()) != null &&
@@ -335,7 +334,7 @@ public class DBMD implements Serializable {
   public List<String> getForeignKeyFieldNames(RelId rel_id,
                                               String alias) // optional
   {
-      List<String> fk_fieldnames = new ArrayList<String>();
+      List<String> fk_fieldnames = new ArrayList<>();
 
       for(ForeignKey fk: getForeignKeysToParentsFrom(rel_id))
       {
@@ -353,8 +352,8 @@ public class DBMD implements Serializable {
 
   public Set<RelId> getMultiplyReferencingChildTablesForParent(RelId parent_rel_id)
   {
-      Set<RelId> rels = new HashSet<RelId>();
-      Set<RelId> repeated_rels = new HashSet<RelId>();
+      Set<RelId> rels = new HashSet<>();
+      Set<RelId> repeated_rels = new HashSet<>();
 
       for(ForeignKey fk: getForeignKeysFromChildrenTo(parent_rel_id))
       {
@@ -367,8 +366,8 @@ public class DBMD implements Serializable {
 
   public Set<RelId> getMultiplyReferencedParentTablesForChild(RelId child_rel_id)
   {
-      Set<RelId> rels = new HashSet<RelId>();
-      Set<RelId> repeated_rels = new HashSet<RelId>();
+      Set<RelId> rels = new HashSet<>();
+      Set<RelId> repeated_rels = new HashSet<>();
 
       for(ForeignKey fk: getForeignKeysToParentsFrom(child_rel_id))
       {
@@ -413,7 +412,7 @@ public class DBMD implements Serializable {
           return null;
       else
       {
-          final Set<String> normd_names = new HashSet<String>();
+          final Set<String> normd_names = new HashSet<>();
 
           for(String name: names)
               normd_names.add(normalizeDatabaseId(name));
@@ -424,7 +423,7 @@ public class DBMD implements Serializable {
 
   public <E> Map<String,E> normalizeNameKeys(Map<String,E> map_with_identifier_keys)
   {
-      Map<String,E> res = new HashMap<String,E>();
+      Map<String,E> res = new HashMap<>();
 
       for(Map.Entry<String,E> entry: map_with_identifier_keys.entrySet())
       {
@@ -458,7 +457,7 @@ public class DBMD implements Serializable {
 
     if ( dotix == -1 )
     {
-        schema = getRequestedOwningSchemaName() != null ? getRequestedOwningSchemaName() : null;
+        schema = getRequestedOwningSchemaName();
         relname = possibly_schema_qualified_relname;
     }
     else
@@ -477,15 +476,9 @@ public class DBMD implements Serializable {
 
   private List<RelMetaData> sortedMds(List<RelMetaData> rel_mds)
   {
-      List<RelMetaData> rmds = new ArrayList<RelMetaData>(rel_mds);
+      List<RelMetaData> rmds = new ArrayList<>(rel_mds);
 
-      Collections.sort(rmds, new Comparator<RelMetaData>() {
-        @Override
-        public int compare(RelMetaData rmd1, RelMetaData rmd2)
-        {
-            return rmd1.getRelationId().getIdString().compareTo(rmd2.getRelationId().getIdString());
-        }
-      });
+      rmds.sort(Comparator.comparing(rmd -> rmd.getRelationId().getIdString()));
 
       return Collections.unmodifiableList(rmds);
   }
@@ -493,27 +486,23 @@ public class DBMD implements Serializable {
   /** Return a new copy of the input list, with its foreign keys sorted by source and target relation names and source and target field names. */
   private List<ForeignKey> sortedFks(List<ForeignKey> foreignKeys)
   {
-      List<ForeignKey> fks = new ArrayList<ForeignKey>(foreignKeys);
+      List<ForeignKey> fks = new ArrayList<>(foreignKeys);
 
-      Collections.sort(fks, new Comparator<ForeignKey>() {
-        @Override
-        public int compare(ForeignKey fk1, ForeignKey fk2)
-        {
-            int src_rel_comp = fk1.getSourceRelationId().getIdString().compareTo(fk2.getSourceRelationId().getIdString());
-            if ( src_rel_comp != 0 )
-                return src_rel_comp;
+      fks.sort((fk1, fk2) -> {
+          int src_rel_comp = fk1.getSourceRelationId().getIdString().compareTo(fk2.getSourceRelationId().getIdString());
+          if ( src_rel_comp != 0 )
+              return src_rel_comp;
 
-            int tgt_rel_comp = fk1.getTargetRelationId().getIdString().compareTo(fk2.getTargetRelationId().getIdString());
-            if ( tgt_rel_comp != 0 )
-                return tgt_rel_comp;
+          int tgt_rel_comp = fk1.getTargetRelationId().getIdString().compareTo(fk2.getTargetRelationId().getIdString());
+          if ( tgt_rel_comp != 0 )
+              return tgt_rel_comp;
 
-            int src_fields_comp = compareStringListsLexicographically(fk1.getSourceFieldNames(), fk2.getSourceFieldNames());
+          int src_fields_comp = compareStringListsLexicographically(fk1.getSourceFieldNames(), fk2.getSourceFieldNames());
 
-            if ( src_fields_comp != 0 )
-                return src_fields_comp;
-            else
-                return compareStringListsLexicographically(fk1.getTargetFieldNames(), fk2.getTargetFieldNames());
-        }
+          if ( src_fields_comp != 0 )
+              return src_fields_comp;
+          else
+              return compareStringListsLexicographically(fk1.getTargetFieldNames(), fk2.getTargetFieldNames());
       });
 
       return Collections.unmodifiableList(fks);
@@ -576,15 +565,15 @@ public class DBMD implements Serializable {
 
   protected void initDerivedData()
   {
-      relMDsByRelId = new HashMap<RelId,RelMetaData>();
+      relMDsByRelId = new HashMap<>();
       if ( relMetaDatas != null )
       {
           for(RelMetaData rel_md: relMetaDatas)
               relMDsByRelId.put(rel_md.getRelationId(), rel_md);
       }
 
-      fksByParentRelId = new HashMap<RelId,List<ForeignKey>>();
-      fksByChildRelId = new HashMap<RelId,List<ForeignKey>>();
+      fksByParentRelId = new HashMap<>();
+      fksByChildRelId = new HashMap<>();
       if ( foreignKeys != null )
       {
           for(ForeignKey fk: foreignKeys)
@@ -592,14 +581,10 @@ public class DBMD implements Serializable {
               RelId src_relid = fk.getSourceRelationId();
               RelId tgt_relid = fk.getTargetRelationId();
 
-              List<ForeignKey> fks_from_child = fksByChildRelId.get(src_relid);
-              if ( fks_from_child == null )
-                  fksByChildRelId.put(src_relid, fks_from_child = new ArrayList<ForeignKey>());
+              List<ForeignKey> fks_from_child = fksByChildRelId.computeIfAbsent(src_relid, k -> new ArrayList<>());
               fks_from_child.add(fk);
 
-              List<ForeignKey> fks_to_parent = fksByParentRelId.get(tgt_relid);
-              if ( fks_to_parent == null )
-                  fksByParentRelId.put(tgt_relid, fks_to_parent = new ArrayList<ForeignKey>());
+              List<ForeignKey> fks_to_parent = fksByParentRelId.computeIfAbsent(tgt_relid, k -> new ArrayList<>());
               fks_to_parent.add(fk);
           }
       }

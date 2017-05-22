@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>gov.fda.nctr</groupId>
   <artifactId>dbmd</artifactId>
-  <version>1.1.4</version>
-  <name>Database Metadata Access Library</name>
+  <version>1.1.5</version>
+  <name>Java Database Metadata Library</name>
 
   <distributionManagement>
+    <repository>
+      <id>nctr-maven-releases-repo</id>
+      <url>scpexe://ncsvmweb02.fda.gov:/var/www/devfiles/maven2-releases</url>
+    </repository>
     <snapshotRepository>
-      <id>snapshots-repo</id>
-      <url>${snapshots.url}</url>
+      <id>nctr-maven-snapshots-repo</id>
+      <url>scpexe://ncsvmweb02.fda.gov:/var/www/devfiles/maven2-snapshots</url>
       <uniqueVersion>false</uniqueVersion>
     </snapshotRepository>
-    <repository>
-      <id>releases-repo</id>
-      <url>${releases.url}</url>
-    </repository>
   </distributionManagement>
-
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -29,16 +29,16 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.3.2</version>
+        <version>3.6.1</version>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>2.1.2</version>
+        <version>3.0.1</version>
         <executions>
           <execution>
             <goals>
@@ -48,5 +48,13 @@
         </executions>
       </plugin>
     </plugins>
+    <extensions>
+      <!-- Enable use of scp for deployment. -->
+      <extension>
+        <groupId>org.apache.maven.wagon</groupId>
+        <artifactId>wagon-ssh-external</artifactId>
+        <version>1.0-beta-6</version>
+      </extension>
+    </extensions>
   </build>
 </project>

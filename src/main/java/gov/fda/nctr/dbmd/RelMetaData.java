@@ -55,7 +55,7 @@ public class RelMetaData implements Serializable {
 
     public List<Field> getPrimaryKeyFields()
     {
-        List<Field> pks = new ArrayList<Field>();
+        List<Field> pks = new ArrayList<>();
 
         for(Field f: fields)
         {
@@ -63,12 +63,7 @@ public class RelMetaData implements Serializable {
                 pks.add(f);
         }
 
-        Collections.sort(pks, new Comparator<Field>(){
-            public int compare(Field f1, Field f2)
-            {
-                return f1.pkPartNum - f2.pkPartNum;
-            }
-        });
+        pks.sort(Comparator.comparingInt(f -> f.pkPartNum));
 
         return pks;
     }
@@ -80,7 +75,7 @@ public class RelMetaData implements Serializable {
 
     public List<String> getPrimaryKeyFieldNames(String alias)
     {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
 
         for(Field f: getPrimaryKeyFields())
             names.add(alias != null ? alias + "." + f.getName() : f.getName());
@@ -132,9 +127,7 @@ public class RelMetaData implements Serializable {
         }
         else if (!relId.equals(other.relId))
             return false;
-        if (relType != other.relType)
-            return false;
-        return true;
+        return relType == other.relType;
     }
 
     private static final long serialVersionUID = 1L;

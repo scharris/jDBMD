@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 
 public class DatabaseMetaDataFetcher implements Serializable {
 
-    public static enum DateMapping { DATES_AS_DRIVER_REPORTED, DATES_AS_TIMESTAMPS, DATES_AS_DATES }
+    public enum DateMapping { DATES_AS_DRIVER_REPORTED, DATES_AS_TIMESTAMPS, DATES_AS_DATES }
 
     DateMapping dateMapping;
 
@@ -72,7 +72,7 @@ public class DatabaseMetaDataFetcher implements Serializable {
 
         List<RelMetaData> rel_mds = incl_fields ? fetchRelationMetaDatas(rel_descrs, schema, dbmd) : null;
 
-        List<ForeignKey> fks = fetchForeignKeys(schema, dbmd, exclude_rels_pat);
+        List<ForeignKey> fks = incl_fks ? fetchForeignKeys(schema, dbmd, exclude_rels_pat) : null;
 
         String dbms_name = dbmd.getDatabaseProductName();
         String dbms_ver_str = dbmd.getDatabaseProductVersion();
@@ -102,9 +102,9 @@ public class DatabaseMetaDataFetcher implements Serializable {
                                                     boolean incl_views,
                                                     Pattern exclude_rels_pat) throws SQLException
     {
-        List<RelDescr> rel_descrs = new ArrayList<RelDescr>();
+        List<RelDescr> rel_descrs = new ArrayList<>();
 
-        Set<String> rel_types = new HashSet<String>();
+        Set<String> rel_types = new HashSet<>();
         if ( incl_tables )
             rel_types.add("TABLE");
         if ( incl_views )
@@ -144,10 +144,9 @@ public class DatabaseMetaDataFetcher implements Serializable {
                                                     String schema,
                                                     DatabaseMetaData dbmd) throws SQLException
     {
-        ResultSet pk_rs = null;
         ResultSet cols_rs = null;
 
-        Map<RelId,RelDescr> rel_descrs_by_relid = new HashMap<RelId,RelDescr>();
+        Map<RelId,RelDescr> rel_descrs_by_relid = new HashMap<>();
         for(RelDescr rel_descr: rel_descrs)
             rel_descrs_by_relid.put(rel_descr.getRelationId(), rel_descr);
 
@@ -155,7 +154,7 @@ public class DatabaseMetaDataFetcher implements Serializable {
         {
             cols_rs = dbmd.getColumns(null, schema, "%", "%");
 
-            List<RelMetaData> rel_mds = new ArrayList<RelMetaData>();
+            List<RelMetaData> rel_mds = new ArrayList<>();
             RelMetaData accum_rel_md = null;
 
             while(cols_rs.next())
@@ -178,7 +177,7 @@ public class DatabaseMetaDataFetcher implements Serializable {
                         accum_rel_md = new RelMetaData(rel_id,
                                                        rel_descr.getRelationType(),
                                                        rel_descr.getRelationComment(),
-                                                       new ArrayList<Field>());
+                                                       new ArrayList<>());
                     }
 
                     accum_rel_md.getFields().add(f);
@@ -194,8 +193,6 @@ public class DatabaseMetaDataFetcher implements Serializable {
         {
             try
             {
-                if (pk_rs != null)
-                    pk_rs.close();
                 if (cols_rs != null)
                     cols_rs.close();
             }
@@ -217,11 +214,9 @@ public class DatabaseMetaDataFetcher implements Serializable {
                                              DatabaseMetaData dbmd,
                                              Pattern exclude_rels_pat) throws SQLException
     {
-        List<ForeignKey> fks = new ArrayList<ForeignKey>();
+        List<ForeignKey> fks = new ArrayList<>();
 
-        ResultSet fk_rs = dbmd.getImportedKeys(null, schema, null);
-
-        try
+        try(ResultSet fk_rs = dbmd.getImportedKeys(null, schema, null))
         {
             RelId src_rel = null;
             RelId tgt_rel = null;
@@ -245,7 +240,7 @@ public class DatabaseMetaDataFetcher implements Serializable {
                     src_rel = new RelId(fk_rs.getString("FKTABLE_CAT"), fk_rs.getString("FKTABLE_SCHEM"), fk_rs.getString("FKTABLE_NAME"));
                     tgt_rel = new RelId(fk_rs.getString("PKTABLE_CAT"), fk_rs.getString("PKTABLE_SCHEM"), fk_rs.getString("PKTABLE_NAME"));
 
-                    comps = new ArrayList<ForeignKey.Component>();
+                    comps = new ArrayList<>();
                     comps.add(new ForeignKey.Component(fk_rs.getString("FKCOLUMN_NAME"), fk_rs.getString("PKCOLUMN_NAME")));
                 }
                 else
@@ -263,10 +258,6 @@ public class DatabaseMetaDataFetcher implements Serializable {
                     fks.add(new ForeignKey(src_rel, tgt_rel, comps));
                 }
             }
-        }
-        finally
-        {
-            fk_rs.close();
         }
 
         return fks;
@@ -411,7 +402,7 @@ public class DatabaseMetaDataFetcher implements Serializable {
         try
         {
             // Fetch the primary key field names and part numbers for this relation
-            Map<String, Integer> pkseqnums_by_name = new HashMap<String, Integer>();
+            Map<String, Integer> pkseqnums_by_name = new HashMap<>();
             pk_rs = dbmd.getPrimaryKeys(cols_rs.getString(1), cols_rs.getString(2), cols_rs.getString(3));
             while (pk_rs.next())
                 pkseqnums_by_name.put(pk_rs.getString(4), pk_rs.getInt(5));
@@ -510,11 +501,9 @@ public class DatabaseMetaDataFetcher implements Serializable {
 
         String jdbc_props_file_path = args[arg_ix++];
         String dbmd_props_file_path = args.length == 3 ? args[arg_ix++] : null;
-        String output_file_path = args[arg_ix++];
+        String output_file_path = args[arg_ix];
 
         Properties props = new Properties();
-
-        Connection conn = null;
 
         try
         {
@@ -548,7 +537,7 @@ public class DatabaseMetaDataFetcher implements Serializable {
             if ( driver_classname != null )
                 Class.forName(driver_classname);
 
-            conn = DriverManager.getConnection(conn_str, user, password);
+            Connection conn = DriverManager.getConnection(conn_str, user, password);
 
             DatabaseMetaDataFetcher mdfetcher = new DatabaseMetaDataFetcher(date_mapping);
 

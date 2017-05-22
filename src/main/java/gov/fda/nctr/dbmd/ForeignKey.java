@@ -54,7 +54,7 @@ public class ForeignKey implements Serializable {
 
     public List<String> getSourceFieldNames()
     {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
 
         for(Component comp: components)
             names.add(comp.getForeignKeyFieldName());
@@ -64,7 +64,7 @@ public class ForeignKey implements Serializable {
 
     public List<String> getTargetFieldNames()
     {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
 
         for(Component comp: components)
             names.add(comp.getPrimaryKeyFieldName());
@@ -123,7 +123,7 @@ public class ForeignKey implements Serializable {
         if ( getForeignKeyComponents().size() != normd_reqd_fk_field_names.size() )
             return false;
 
-        Set<String> child_fk_field_names = new HashSet<String>();
+        Set<String> child_fk_field_names = new HashSet<>();
 
         for(ForeignKey.Component fk_comp: getForeignKeyComponents())
             child_fk_field_names.add(fk_comp.getForeignKeyFieldName());

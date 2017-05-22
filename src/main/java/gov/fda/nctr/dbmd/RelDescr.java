@@ -82,9 +82,7 @@ public class RelDescr implements Serializable {
         }
         else if (!relId.equals(other.relId))
             return false;
-        if (relType != other.relType)
-            return false;
-        return true;
+        return relType == other.relType;
     }
 
     private static final long serialVersionUID = 1L;
