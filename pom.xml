@@ -9,11 +9,11 @@
 
   <distributionManagement>
     <repository>
-      <id>nctr-maven-releases-repo</id>
+      <id>releases-repo</id>
       <url>scpexe://${nctr_releases_scp_target}</url>
     </repository>
     <snapshotRepository>
-      <id>nctr-maven-snapshots-repo</id>
+      <id>snapshots-repo</id>
       <url>scpexe://${nctr_snapshots_scp_target}</url>
       <uniqueVersion>false</uniqueVersion>
     </snapshotRepository>
@@ -21,14 +21,14 @@
 
   <repositories>
     <repository>
-        <id>nctr-maven-releases-repo</id>
-        <name>NCTR Releases Repository</name>
-        <url>${nctr_releases_repo_url}</url>
+        <id>releases-repo</id>
+        <name>NCTR Maven Releases Repository</name>
+        <url>${releases.url}</url>
     </repository>
     <repository>
-        <id>nctr-maven-snapshots-repo</id>
-        <name>NCTR Snapshots Repository</name>
-        <url>${nctr_snapshots_repo_url}</url>
+        <id>snapshots-repo</id>
+        <name>NCTR Maven Snapshots Repository</name>
+        <url>${snapshots.url}</url>
     </repository>
   </repositories>
 
