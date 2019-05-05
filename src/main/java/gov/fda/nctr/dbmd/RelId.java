@@ -1,25 +1,18 @@
 package gov.fda.nctr.dbmd;
 
-import java.io.Serializable;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
+import java.util.Objects;
+import java.util.Optional;
 
 
-@XmlAccessorType(XmlAccessType.FIELD)
-public class RelId implements Serializable {
+public final class RelId {
 
-    @XmlAttribute
-    String catalog;
+    private Optional<String> catalog;
 
-    @XmlAttribute
-    String schema;
+    private Optional<String> schema;
 
-    @XmlAttribute
-    String name;
+    private String name;
 
-    public RelId(String catalog, String schema, String name)
+    public RelId(Optional<String> catalog, Optional<String> schema, String name)
     {
         this.catalog = catalog;
         this.schema = schema;
@@ -28,32 +21,26 @@ public class RelId implements Serializable {
 
     protected RelId() {}
 
-    public String getIdString()
-    {
-        return (catalog != null ? "[" + catalog + "]" : "") +
-               (schema != null ? schema + "." : "") +
-               name;
-    }
+    public Optional<String> getCatalog() { return catalog; }
+
+    public Optional<String> getSchema() { return schema; }
+
+    public String getName() { return name; }
+
 
     public String toString()
     {
         return getIdString();
     }
 
-    public String getCatalog()
+    public String getIdString()
     {
-        return catalog;
+        return
+            catalog.map(cat ->  "[" + cat + "]").orElse("") +
+            schema.map(s -> s + ".").orElse("") +
+            name;
     }
 
-    public String getSchema()
-    {
-        return schema;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
 
     public boolean equals(Object other)
     {
@@ -62,23 +49,15 @@ public class RelId implements Serializable {
         else
         {
             RelId o = (RelId)other;
-            return eq(catalog, o.catalog) &&
-                   eq(schema, o.schema) &&
-                   eq(name, o.name);
+            return
+                Objects.equals(catalog, o.catalog) &&
+                Objects.equals(schema, o.schema) &&
+                Objects.equals(name, o.name);
         }
     }
 
     public int hashCode()
     {
-        return (catalog != null ? catalog.hashCode() : 0) +
-               (schema != null ? schema.hashCode() : 0) +
-               name.hashCode();
+        return catalog.hashCode() + 3 * (schema.hashCode()  + 7 * name.hashCode());
     }
-
-    static boolean eq(Object o1, Object o2)
-    {
-        return (o1 == null && o2 == null) || o1.equals(o2);
-    }
-
-    private static final long serialVersionUID = 1L;
 }

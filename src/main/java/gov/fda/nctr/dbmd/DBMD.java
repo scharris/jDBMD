@@ -1,712 +1,521 @@
 package gov.fda.nctr.dbmd;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlEnum;
-import javax.xml.bind.annotation.XmlRootElement;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-@XmlRootElement(name="database-metadata", namespace="http://nctr.fda.gov/dbmd")
-@XmlAccessorType(XmlAccessType.FIELD)
-public class DBMD implements Serializable {
 
-  @XmlAttribute(name="requested-owning-schema-name")
-  private String requestedOwningSchemaName;
+public class DBMD
+{
+    private Optional<String> schemaName;
 
-  @XmlAttribute(name="case-sensitivity")
-  private CaseSensitivity caseSensitivity;
+    private List<RelMetaData> relMetaDatas;
 
-  @XmlAttribute(name="dbms-name")
-  private String dbmsName;
+    private List<ForeignKey> foreignKeys;
 
-  @XmlAttribute(name="dbms-version")
-  private String dbmsVersion;
+    private CaseSensitivity caseSensitivity;
 
-  @XmlAttribute(name="dbms-major-version")
-  private int dbmsMajorVersion;
+    private String dbmsName;
 
-  @XmlAttribute(name="dbms-minor-version")
-  private int dbmsMinorVersion;
+    private String dbmsVersion;
 
+    private int dbmsMajorVersion;
 
-  @XmlElementWrapper(name = "relation-metadatas")
-  @XmlElement(name="rel-md")
-  private List<RelMetaData> relMetaDatas;
+    private int dbmsMinorVersion;
 
-  @XmlElementWrapper(name = "foreign-keys")
-  @XmlElement(name="foreign-key")
-  private List<ForeignKey> foreignKeys;
 
-  // derived data
-  private transient Map<RelId,RelMetaData> relMDsByRelId;
-  private transient Map<RelId,List<ForeignKey>> fksByParentRelId;
-  private transient Map<RelId,List<ForeignKey>> fksByChildRelId;
+    // derived data
+    // Access these only via methods of the same name, which make sure these fields are initialized.
+    @JsonIgnore()
+    private Map<RelId, RelMetaData> relMDsByRelId;
+    @JsonIgnore()
+    private Map<RelId, List<ForeignKey>> fksByParentRelId;
+    @JsonIgnore()
+    private Map<RelId, List<ForeignKey>> fksByChildRelId;
 
-  @XmlEnum
-  public enum CaseSensitivity { INSENSITIVE_STORED_LOWER,
-                                INSENSITIVE_STORED_UPPER,
-                                INSENSITIVE_STORED_MIXED,
-                                SENSITIVE }
-
-  public enum ForeignKeyScope { REGISTERED_TABLES_ONLY, ALL_FKS }
-
-  public DBMD(String owningSchemaName,
-              List<RelMetaData> relMetaDatas,
-              List<ForeignKey> foreignKeys,
-              CaseSensitivity caseSensitivity,
-              String dbms_name,
-              String dbms_ver_str,
-              int dbms_major_ver,
-              int dbms_minor_ver)
-  {
-      super();
-      this.requestedOwningSchemaName = owningSchemaName;
-      this.relMetaDatas = sortedMds(relMetaDatas);
-      this.foreignKeys = sortedFks(foreignKeys);
-      this.caseSensitivity = caseSensitivity;
-      this.dbmsName = dbms_name;
-      this.dbmsVersion = dbms_ver_str;
-      this.dbmsMajorVersion = dbms_major_ver;
-      this.dbmsMinorVersion = dbms_minor_ver;
-  }
-
-
-  // No-args constructor for JAXB.
-
-  DBMD() {}
-
-
-  public String getRequestedOwningSchemaName()
-  {
-      return requestedOwningSchemaName;
-  }
-
-  public CaseSensitivity getCaseSensitivity()
-  {
-      return caseSensitivity;
-  }
-
-  public String getDbmsName()
-  {
-      return dbmsName;
-  }
-
-  public String getDbmsVersion()
-  {
-      return dbmsVersion;
-  }
-
-  public int getDbmsMajorVersion()
-  {
-      return dbmsMajorVersion;
-  }
-
-  public int getDbmsMinorVersion()
-  {
-      return dbmsMinorVersion;
-  }
-
-
-  public List<RelMetaData> getRelationMetaDatas()
-  {
-      return relMetaDatas;
-  }
-
-
-  public List<RelId> getRelationIds()
-  {
-      List<RelId> relids = new ArrayList<>();
-
-      for(RelMetaData relmd: relMetaDatas)
-          relids.add(relmd.getRelationId());
-
-      return relids;
-  }
-
-  public List<ForeignKey> getForeignKeys()
-  {
-      return foreignKeys;
-  }
-
-
-  public RelMetaData getRelationMetaData(RelId rel_id)
-  {
-      return relMDsByRelId().get(rel_id);
-  }
-
-  public RelMetaData getRelationMetaData(String schema, String relname)
-  {
-      return relMDsByRelId().get(toRelId(schema,relname));
-  }
-
-
-  public List<String> getFieldNames(RelId rel_id,
-                                    String alias) // optional
-  {
-      RelMetaData rel_md = getRelationMetaData(rel_id);
-
-      if ( rel_md == null )
-          throw new IllegalArgumentException("Relation " + rel_id + " not found.");
-
-      List<String> field_names = new ArrayList<>();
-
-      for(Field f: rel_md.getFields() )
-          field_names.add(alias != null ? alias + "." + f.getName() : f.getName());
-
-      return field_names;
-  }
-
-  public List<String> getFieldNames(RelId rel_id)
-  {
-      return getFieldNames(rel_id, null);
-  }
-
-
-  public List<String> getFieldNames(String schema, String relname)
-  {
-      return getFieldNames(toRelId(schema,relname));
-  }
-
-  public List<String> getFieldNames(String schema, String relname, String alias)
-  {
-      return getFieldNames(toRelId(schema,relname), alias);
-  }
-
-
-  public List<String> getPrimaryKeyFieldNames(RelId rel_id,
-                                              String alias) // optional
-  {
-      RelMetaData rel_md = getRelationMetaData(rel_id);
-
-      if ( rel_md == null )
-          throw new IllegalArgumentException("Relation " + rel_id + " not found.");
-
-      return rel_md.getPrimaryKeyFieldNames(alias);
-  }
-
-  public List<String> getPrimaryKeyFieldNames(RelId rel_id)
-  {
-      return getPrimaryKeyFieldNames(rel_id, null);
-  }
-
-
-  public List<String> getPrimaryKeyFieldNames(String schema, String relname)
-  {
-      return getPrimaryKeyFieldNames(toRelId(schema,relname));
-  }
-
-  public List<String> getPrimaryKeyFieldNames(String schema, String relname, String alias)
-  {
-      return getPrimaryKeyFieldNames(toRelId(schema,relname), alias);
-  }
-
-
-  public List<ForeignKey> getForeignKeysToParentsFrom(RelId rel_id)
-  {
-      return getForeignKeysFromTo(rel_id, null);
-  }
-
-
-  public List<ForeignKey> getForeignKeysToParentsFrom(String schema, String relname)
-  {
-      return getForeignKeysFromTo(toRelId(schema, relname), null);
-  }
-
-
-  public List<ForeignKey> getForeignKeysFromChildrenTo(RelId rel_id)
-  {
-      return getForeignKeysFromTo(null, rel_id);
-  }
-
-  public List<ForeignKey> getForeignKeysFromChildrenTo(String schema, String relname)
-  {
-      return getForeignKeysFromTo(null, toRelId(schema,relname));
-  }
-
-
-  public List<ForeignKey> getForeignKeysFromTo(String from_schema,
-                                               String from_relname,
-                                               String to_schema,
-                                               String to_relname)
-  {
-      return getForeignKeysFromTo(toRelId(from_schema, from_relname),
-                                  toRelId(to_schema, to_relname));
-  }
-
-
-  public List<ForeignKey> getForeignKeysFromTo(RelId child_rel_id,  // optional
-                                               RelId parent_rel_id, // optional
-                                               ForeignKeyScope fks_incl)
-  {
-      List<ForeignKey> res = new ArrayList<ForeignKey>();
-
-      if ( child_rel_id == null && parent_rel_id == null )
-      {
-          res.addAll(foreignKeys);
-      }
-      else if ( child_rel_id != null && parent_rel_id != null )
-      {
-          res.addAll(fksByChildRelId(child_rel_id));
-          res.retainAll(fksByParentRelId(parent_rel_id));
-      }
-      else
-          res.addAll(child_rel_id != null ? fksByChildRelId(child_rel_id)
-                                          : fksByParentRelId(parent_rel_id));
-
-      if ( fks_incl == ForeignKeyScope.REGISTERED_TABLES_ONLY )
-      {
-          List<ForeignKey> res_filtered = new ArrayList<>();
-
-          for(ForeignKey fk: res)
-              if ( getRelationMetaData(fk.getSourceRelationId()) != null &&
-                   getRelationMetaData(fk.getTargetRelationId()) != null )
-                  res_filtered.add(fk);
-
-          return res_filtered;
-      }
-      else
-          return res;
-  }
-
-  public List<ForeignKey> getForeignKeysFromTo(RelId child_rel_id,  // optional
-                                               RelId parent_rel_id) // optional
-  {
-      return getForeignKeysFromTo(child_rel_id,
-                                  parent_rel_id,
-                                  ForeignKeyScope.REGISTERED_TABLES_ONLY);
-  }
-
-  /** Return a single foreign key between the passed tables, having the specified field names if specified.
-   *  Returns null if no such foreign key is found, or throws IllegalArgumentException if multiple foreign keys satisfy the requirements.
-   */
-  public ForeignKey getForeignKeyFromTo(RelId from_relid,        // Required
-                                        RelId to_relid,          // Required
-                                        Set<String> field_names, // Optional
-                                        ForeignKeyScope inclusion_scope) // Required
-  {
-      final Set<String> normd_fk_field_names = field_names != null ? normalizeNames(field_names) : null;
-
-      ForeignKey sought_fk = null;
-      for(ForeignKey fk: getForeignKeysFromTo(from_relid, to_relid, inclusion_scope))
-      {
-          if ( normd_fk_field_names == null || fk.sourceFieldNamesSetEqualsNormalizedNamesSet(normd_fk_field_names) )
-          {
-              if ( sought_fk != null ) // already found an fk satisfying requirements?
-                  throw new IllegalArgumentException("Child table " + from_relid +
-                                                     " has multiple foreign keys to parent table " + to_relid +
-                                                     (field_names != null ? " with the same specified source field set."
-                                                                          : " and no foreign key field names were specified to disambiguate."));
-
-              sought_fk = fk;
-
-              // No breaking from the loop here, so case that multiple fk's satisfy requirements can be detected.
-          }
-      }
-
-      return sought_fk;
-  }
-
-
-
-  /** Return the field names in the passed table involved in foreign keys (to parents). */
-  public List<String> getForeignKeyFieldNames(RelId rel_id,
-                                              String alias) // optional
-  {
-      List<String> fk_fieldnames = new ArrayList<>();
-
-      for(ForeignKey fk: getForeignKeysToParentsFrom(rel_id))
-      {
-          for(ForeignKey.Component fkcomp: fk.getForeignKeyComponents())
-          {
-              String name = alias == null ? fkcomp.getForeignKeyFieldName() : alias + "." + fkcomp.getForeignKeyFieldName();
-
-              if ( !fk_fieldnames.contains(name) )
-                  fk_fieldnames.add(name);
-          }
-      }
-
-      return fk_fieldnames;
-  }
-
-  public Set<RelId> getMultiplyReferencingChildTablesForParent(RelId parent_rel_id)
-  {
-      Set<RelId> rels = new HashSet<>();
-      Set<RelId> repeated_rels = new HashSet<>();
-
-      for(ForeignKey fk: getForeignKeysFromChildrenTo(parent_rel_id))
-      {
-          if ( !rels.add(fk.getSourceRelationId()) )
-              repeated_rels.add(fk.getSourceRelationId());
-      }
-
-      return repeated_rels;
-  }
-
-  public Set<RelId> getMultiplyReferencedParentTablesForChild(RelId child_rel_id)
-  {
-      Set<RelId> rels = new HashSet<>();
-      Set<RelId> repeated_rels = new HashSet<>();
-
-      for(ForeignKey fk: getForeignKeysToParentsFrom(child_rel_id))
-      {
-          if ( !rels.add(fk.getSourceRelationId()) )
-              repeated_rels.add(fk.getSourceRelationId());
-      }
-
-      return repeated_rels;
-  }
-
-
-  public ForeignKey getForeignKeyHavingFieldSetAmong(Set<String> src_field_names, java.util.Collection<ForeignKey> fks)
-  {
-      Set<String> normd_field_names = normalizeNames(src_field_names);
-
-      for(ForeignKey fk: fks)
-      {
-          if ( fk.sourceFieldNamesSetEqualsNormalizedNamesSet(normd_field_names) )
-              return fk;
-      }
-
-      return null;
-  }
-
-  public String normalizeDatabaseId(String id)
-  {
-      if (id == null || id.equals(""))
-          return null;
-      else if ( id.startsWith("\"") && id.endsWith("\"") )
-          return id; // TODO: maybe should strip the quotes from the value, needs testing
-      else if ( caseSensitivity == CaseSensitivity.INSENSITIVE_STORED_LOWER )
-          return id.toLowerCase();
-      else if ( caseSensitivity == CaseSensitivity.INSENSITIVE_STORED_UPPER )
-          return id.toUpperCase();
-      else
-          return id;
-  }
-
-  public Set<String> normalizeNames(Set<String> names)
-  {
-      if ( names == null )
-          return null;
-      else
-      {
-          final Set<String> normd_names = new HashSet<>();
-
-          for(String name: names)
-              normd_names.add(normalizeDatabaseId(name));
-
-          return normd_names;
-      }
-  }
-
-  public <E> Map<String,E> normalizeNameKeys(Map<String,E> map_with_identifier_keys)
-  {
-      Map<String,E> res = new HashMap<>();
-
-      for(Map.Entry<String,E> entry: map_with_identifier_keys.entrySet())
-      {
-          res.put(normalizeDatabaseId(entry.getKey()), entry.getValue());
-      }
-
-      return res;
-  }
-
-
-  public RelId toRelId(String catalog, String schema, String relname)
-  {
-      return new RelId(normalizeDatabaseId(catalog),
-                       normalizeDatabaseId(schema),
-                       normalizeDatabaseId(relname));
-  }
-
-  public RelId toRelId(String schema, String relname)
-  {
-      return new RelId(null,
-                       normalizeDatabaseId(schema),
-                       normalizeDatabaseId(relname));
-  }
-
-  public RelId toRelId(String possibly_schema_qualified_relname)
-  {
-    String schema;
-    String relname;
-
-      int dotix = possibly_schema_qualified_relname.indexOf('.');
-
-    if ( dotix == -1 )
+    public enum ForeignKeyScope
     {
-        schema = getRequestedOwningSchemaName();
-        relname = possibly_schema_qualified_relname;
-    }
-    else
-    {
-        schema = possibly_schema_qualified_relname.substring(0, dotix);
-        relname = possibly_schema_qualified_relname.substring(dotix + 1);
+        REGISTERED_TABLES_ONLY,
+        ALL_TABLES
     }
 
-    return new RelId(null,
-                     normalizeDatabaseId(schema),
-                     normalizeDatabaseId(relname));
-  }
+    public DBMD
+        (
+            Optional<String> schemaName,
+            List<RelMetaData> relMetaDatas,
+            List<ForeignKey> foreignKeys,
+            CaseSensitivity caseSensitivity,
+            String dbmsName,
+            String dbmsVersion,
+            int dbmsMajorVersion,
+            int dbmsMinorVersion
+        )
+    {
+        this.schemaName = schemaName;
+        this.relMetaDatas = sortedMds(relMetaDatas);
+        this.foreignKeys = sortedFks(foreignKeys);
+        this.caseSensitivity = caseSensitivity;
+        this.dbmsName = dbmsName;
+        this.dbmsVersion = dbmsVersion;
+        this.dbmsMajorVersion = dbmsMajorVersion;
+        this.dbmsMinorVersion = dbmsMinorVersion;
+    }
 
-  /////////////////////////////////////////////////////////
-  // Sorting for deterministic output
-
-  private List<RelMetaData> sortedMds(List<RelMetaData> rel_mds)
-  {
-      List<RelMetaData> rmds = new ArrayList<>(rel_mds);
-
-      rmds.sort(Comparator.comparing(rmd -> rmd.getRelationId().getIdString()));
-
-      return Collections.unmodifiableList(rmds);
-  }
-
-  /** Return a new copy of the input list, with its foreign keys sorted by source and target relation names and source and target field names. */
-  private List<ForeignKey> sortedFks(List<ForeignKey> foreignKeys)
-  {
-      List<ForeignKey> fks = new ArrayList<>(foreignKeys);
-
-      fks.sort((fk1, fk2) -> {
-          int src_rel_comp = fk1.getSourceRelationId().getIdString().compareTo(fk2.getSourceRelationId().getIdString());
-          if ( src_rel_comp != 0 )
-              return src_rel_comp;
-
-          int tgt_rel_comp = fk1.getTargetRelationId().getIdString().compareTo(fk2.getTargetRelationId().getIdString());
-          if ( tgt_rel_comp != 0 )
-              return tgt_rel_comp;
-
-          int src_fields_comp = compareStringListsLexicographically(fk1.getSourceFieldNames(), fk2.getSourceFieldNames());
-
-          if ( src_fields_comp != 0 )
-              return src_fields_comp;
-          else
-              return compareStringListsLexicographically(fk1.getTargetFieldNames(), fk2.getTargetFieldNames());
-      });
-
-      return Collections.unmodifiableList(fks);
-  }
-
-  private int compareStringListsLexicographically(List<String> strs_1, List<String> strs_2)
-  {
-      int common_count = Math.min(strs_1.size(), strs_2.size());
-
-      for(int i=0; i<common_count; ++i)
-      {
-          int comp = strs_1.get(i).compareTo(strs_2.get(i));
-          if ( comp != 0 )
-              return comp;
-      }
-
-      return strs_1.size() < strs_2.size() ? -1
-                 : strs_1.size() > strs_2.size() ? 1
-                 : 0;
-  }
-
-  // Sorting for deterministic output
-  /////////////////////////////////////////////////////////
+    protected DBMD() {}
 
 
-  /////////////////////////////////////////////////////////
-  // Derived data / caching methods
+    public Optional<String> getSchemaName() { return schemaName; }
 
-  protected Map<RelId, RelMetaData> relMDsByRelId()
-  {
-      if ( relMDsByRelId == null )
-          initDerivedData();
+    public List<RelMetaData> getRelationMetaDatas() { return relMetaDatas; }
 
-      return relMDsByRelId;
-  }
+    public List<ForeignKey> getForeignKeys() { return foreignKeys; }
 
-  private List<ForeignKey> fksByParentRelId(RelId rel_id)
-  {
-      if ( fksByParentRelId == null )
-          initDerivedData();
+    public CaseSensitivity getCaseSensitivity() { return caseSensitivity; }
 
-      List<ForeignKey> fks = fksByParentRelId.get(rel_id);
-      if (fks != null)
-          return fks;
-      else
-          return Collections.emptyList();
-  }
+    public String getDbmsName() { return dbmsName; }
 
-  private List<ForeignKey> fksByChildRelId(RelId rel_id)
-  {
-      if ( fksByChildRelId == null )
-          initDerivedData();
+    public String getDbmsVersion() { return dbmsVersion; }
 
-      List<ForeignKey> fks = fksByChildRelId.get(rel_id);
-      if (fks != null)
-          return fks;
-      else
-          return Collections.emptyList();
-  }
+    public int getDbmsMajorVersion() { return dbmsMajorVersion; }
 
-  protected void initDerivedData()
-  {
-      relMDsByRelId = new HashMap<>();
-      if ( relMetaDatas != null )
-      {
-          for(RelMetaData rel_md: relMetaDatas)
-              relMDsByRelId.put(rel_md.getRelationId(), rel_md);
-      }
-
-      fksByParentRelId = new HashMap<>();
-      fksByChildRelId = new HashMap<>();
-      if ( foreignKeys != null )
-      {
-          for(ForeignKey fk: foreignKeys)
-          {
-              RelId src_relid = fk.getSourceRelationId();
-              RelId tgt_relid = fk.getTargetRelationId();
-
-              List<ForeignKey> fks_from_child = fksByChildRelId.computeIfAbsent(src_relid, k -> new ArrayList<>());
-              fks_from_child.add(fk);
-
-              List<ForeignKey> fks_to_parent = fksByParentRelId.computeIfAbsent(tgt_relid, k -> new ArrayList<>());
-              fks_to_parent.add(fk);
-          }
-      }
-  }
-
-  // Derived data / caching methods
-  /////////////////////////////////////////////////////////
+    public int getDbmsMinorVersion() { return dbmsMinorVersion; }
 
 
-  public void writeXML(OutputStream os) throws JAXBException, IOException
-  {
-      JAXBContext context = JAXBContext.newInstance(getClass());
-      Marshaller m = context.createMarshaller();
-      m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-      m.marshal(this, os);
-      os.flush();
-  }
+    public Optional<RelMetaData> getRelationMetaData(RelId relId)
+    {
+        return Optional.ofNullable(relMDsByRelId().get(relId));
+    }
 
-  public void writeXML(Writer w) throws JAXBException, IOException
-  {
-      JAXBContext context = JAXBContext.newInstance(getClass());
-      Marshaller m = context.createMarshaller();
-      m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-      m.marshal(this, w);
-      w.flush();
-  }
+    public Optional<RelMetaData> getRelationMetaData(Optional<String> schema, String relName)
+    {
+        return getRelationMetaData(makeRelId(schema, relName));
+    }
 
-  public String toXMLString() throws JAXBException, IOException
-  {
-      StringWriter sw = new StringWriter();
+    public List<String> getFieldNames(RelId relId, Optional<String> alias)
+    {
+        RelMetaData relMd = getRelationMetaData(relId).orElseThrow(() ->
+            new IllegalArgumentException("Relation " + relId + " not found.")
+        );
 
-      writeXML(sw);
+        return
+            relMd.getFields().stream()
+            .map(f -> dotQualify(alias, f.getName()))
+            .collect(toList());
+    }
 
-      return sw.toString();
-  }
+    public List<String> getFieldNames(RelId relId)
+    {
+        return getFieldNames(relId, Optional.empty());
+    }
+
+    public List<String> getFieldNames(Optional<String> schema, String relName)
+    {
+        return getFieldNames(makeRelId(schema, relName));
+    }
+
+    public List<String> getFieldNames(Optional<String> schema, String relName, Optional<String> alias)
+    {
+        return getFieldNames(makeRelId(schema, relName), alias);
+    }
+
+    public List<String> getPrimaryKeyFieldNames(RelId relId, Optional<String> alias)
+    {
+        RelMetaData relMd = getRelationMetaData(relId).orElseThrow(() ->
+            new IllegalArgumentException("Relation " + relId + " not found.")
+        );
+
+        return relMd.getPrimaryKeyFieldNames(alias);
+    }
+
+    public List<String> getPrimaryKeyFieldNames(RelId relId)
+    {
+        return getPrimaryKeyFieldNames(relId, Optional.empty());
+    }
+
+    public List<String> getPrimaryKeyFieldNames(Optional<String> schema, String relName)
+    {
+        return getPrimaryKeyFieldNames(makeRelId(schema, relName));
+    }
+
+    public List<String> getPrimaryKeyFieldNames(Optional<String> schema, String relName, Optional<String> alias)
+    {
+        return getPrimaryKeyFieldNames(makeRelId(schema, relName), alias);
+    }
+
+    public List<ForeignKey> getForeignKeysToParentsFrom(RelId relId)
+    {
+        return getForeignKeysFromTo(Optional.of(relId), Optional.empty());
+    }
+
+    public List<ForeignKey> getForeignKeysToParentsFrom(Optional<String> schema, String relName)
+    {
+        return getForeignKeysFromTo(Optional.of(makeRelId(schema, relName)), Optional.empty());
+    }
+
+    public List<ForeignKey> getForeignKeysFromChildrenTo(RelId relId)
+    {
+        return getForeignKeysFromTo(Optional.empty(), Optional.of(relId));
+    }
+
+    public List<ForeignKey> getForeignKeysFromChildrenTo(Optional<String> schema, String relName)
+    {
+        return getForeignKeysFromTo(Optional.empty(), Optional.of(makeRelId(schema, relName)));
+    }
+
+    public List<ForeignKey> getForeignKeysFromTo
+        (
+            String fromSchema,
+            String fromRelName,
+            String toSchema,
+            String toRelName
+        )
+    {
+        RelId fromRelId = makeRelId(Optional.of(fromSchema), fromRelName);
+        RelId toRelId = makeRelId(Optional.of(toSchema), toRelName);
+
+        return getForeignKeysFromTo(Optional.of(fromRelId), Optional.of(toRelId));
+    }
+
+    public List<ForeignKey> getForeignKeysFromTo
+        (
+            Optional<RelId> childRelId,
+            Optional<RelId> parentRelId,
+            ForeignKeyScope fkScope
+        )
+    {
+        List<ForeignKey> res = new ArrayList<>();
+
+        if ( childRelId.isEmpty() && parentRelId.isEmpty() )
+        {
+            res.addAll(foreignKeys);
+        }
+        else if ( childRelId.isPresent()  && parentRelId.isPresent() )
+        {
+            res.addAll(fksByChildRelId(childRelId.get()));
+            res.retainAll(fksByParentRelId(parentRelId.get()));
+        }
+        else
+            res.addAll(
+                childRelId.isPresent() ?
+                    fksByChildRelId(childRelId.get())
+                    : fksByParentRelId(parentRelId.get())
+            );
+
+        if ( fkScope == ForeignKeyScope.REGISTERED_TABLES_ONLY )
+        {
+            return
+                res.stream()
+                .filter(fk ->
+                    getRelationMetaData(fk.getSourceRelationId()).isPresent() &&
+                    getRelationMetaData(fk.getTargetRelationId()).isPresent()
+                )
+                .collect(toList());
+        }
+        else
+            return res;
+    }
+
+    public List<ForeignKey> getForeignKeysFromTo
+        (
+            Optional<RelId> childRelId,
+            Optional<RelId> parentRelId
+        )
+    {
+        return
+            getForeignKeysFromTo(
+                childRelId,
+                parentRelId,
+                ForeignKeyScope.REGISTERED_TABLES_ONLY
+            );
+    }
+
+    /** Return a single foreign key between the passed tables, having the specified field names if specified,
+     *  or Optional.empty() if not found. IllegalArgumentException is thrown if multiple foreign keys satisfy
+     *  the requirements.
+     */
+    public Optional<ForeignKey> getForeignKeyFromTo
+        (
+            RelId fromRelId,
+            RelId toRelId,
+            Optional<Set<String>> fieldNames,
+            ForeignKeyScope fkScope
+        )
+    {
+        Optional<RelId> fromRel = Optional.of(fromRelId);
+        Optional<RelId> toRel = Optional.of(toRelId);
+
+        Optional<Set<String>> normdFkFieldNames = fieldNames.map(this::normalizeNames);
+
+        ForeignKey soughtFk = null;
+
+        for ( ForeignKey fk : getForeignKeysFromTo(fromRel, toRel, fkScope) )
+        {
+            if ( normdFkFieldNames.isEmpty() ||
+                 fk.sourceFieldNamesSetEqualsNormalizedNamesSet(normdFkFieldNames.get()) )
+            {
+                if ( soughtFk != null ) // already found an fk satisfying requirements?
+                    throw new IllegalArgumentException(
+                    "Child table " + fromRelId + " has multiple foreign keys to parent table " + toRelId +
+                    (fieldNames != null ? " with the same specified source fields."
+                    : " and no foreign key fields were specified to disambiguate."));
+
+                soughtFk = fk;
+                // No breaking from the loop here, so case that multiple fk's satisfy requirements can be detected.
+            }
+        }
+
+        return Optional.ofNullable(soughtFk);
+    }
+
+    /** Return the field names in the passed table involved in foreign keys (to parents). */
+    public Set<String> getForeignKeyFieldNames
+        (
+            RelId relId,
+            Optional<String> alias
+        )
+    {
+        return
+            getForeignKeysToParentsFrom(relId).stream()
+            .flatMap(fk -> fk.getForeignKeyComponents().stream())
+            .map(fkComp -> dotQualify(alias, fkComp.getForeignKeyFieldName()))
+            .collect(toSet());
+    }
+
+    public Set<RelId> getMultiplyReferencingChildTablesForParent(RelId parentRelId)
+    {
+        Set<RelId> rels = new HashSet<>();
+        Set<RelId> repeatedChildren = new HashSet<>();
+
+        for ( ForeignKey fk : getForeignKeysFromChildrenTo(parentRelId) )
+        {
+            if ( !rels.add(fk.getSourceRelationId()) )
+                repeatedChildren.add(fk.getSourceRelationId());
+        }
+
+        return repeatedChildren;
+    }
+
+    public Set<RelId> getMultiplyReferencedParentTablesForChild(RelId childRelId)
+    {
+        Set<RelId> rels = new HashSet<>();
+        Set<RelId> repeatedParents = new HashSet<>();
+
+        for ( ForeignKey fk : getForeignKeysToParentsFrom(childRelId) )
+        {
+            if ( !rels.add(fk.getTargetRelationId()) )
+                repeatedParents.add(fk.getTargetRelationId());
+        }
+
+        return repeatedParents;
+    }
+
+    public Optional<ForeignKey> getForeignKeyHavingFieldSetAmong
+        (
+            Set<String> srcFieldNames,
+            Collection<ForeignKey> fks
+        )
+    {
+        Set<String> normdFieldNames = normalizeNames(srcFieldNames);
+
+        return
+            fks.stream()
+            .filter(fk -> fk.sourceFieldNamesSetEqualsNormalizedNamesSet(normdFieldNames))
+            .findAny();
+    }
+
+    /////////////////////////////////////////////////////////
+    // Sorting for deterministic output
+
+    private static List<RelMetaData> sortedMds(List<RelMetaData> relMds)
+    {
+        List<RelMetaData> rmds = new ArrayList<>(relMds);
+
+        rmds.sort(Comparator.comparing(rmd -> rmd.getRelationId().getIdString()));
+
+        return Collections.unmodifiableList(rmds);
+    }
+
+    /**
+     * Return a new copy of the input list, with its foreign keys sorted by source and target relation names and source and target field names.
+     */
+    private static List<ForeignKey> sortedFks(List<ForeignKey> foreignKeys)
+    {
+        List<ForeignKey> fks = new ArrayList<>(foreignKeys);
+
+        fks.sort((fk1, fk2) -> {
+            int srcRelComp = fk1.getSourceRelationId().getIdString().compareTo(fk2.getSourceRelationId().getIdString());
+            if (srcRelComp != 0)
+                return srcRelComp;
+
+            int tgtRelComp = fk1.getTargetRelationId().getIdString().compareTo(fk2.getTargetRelationId().getIdString());
+            if (tgtRelComp != 0)
+                return tgtRelComp;
+
+            int srcFieldsComp = compareStringListsLexicographically(fk1.getSourceFieldNames(), fk2.getSourceFieldNames());
+
+            if (srcFieldsComp != 0)
+                return srcFieldsComp;
+            else
+                return compareStringListsLexicographically(fk1.getTargetFieldNames(), fk2.getTargetFieldNames());
+        });
+
+        return Collections.unmodifiableList(fks);
+    }
+
+    private static int compareStringListsLexicographically(List<String> strs1, List<String> strs2)
+    {
+        int commonCount = Math.min(strs1.size(), strs2.size());
+
+        for (int i = 0; i < commonCount; ++i)
+        {
+            int comp = strs1.get(i).compareTo(strs2.get(i));
+            if (comp != 0)
+                return comp;
+        }
+
+        return strs1.size() < strs2.size() ? -1
+        : strs1.size() > strs2.size() ? 1
+        : 0;
+    }
+
+    // Sorting for deterministic output
+    /////////////////////////////////////////////////////////
 
 
-  public static DBMD readXML(InputStream is, boolean close_stream) throws JAXBException, IOException
-  {
-      Unmarshaller u = JAXBContext.newInstance(DBMD.class).createUnmarshaller();
-      DBMD dbmd = (DBMD)u.unmarshal(is);
-      if ( close_stream )
-          is.close();
-      return dbmd;
-  }
+    /////////////////////////////////////////////////////////
+    // Derived data accessor methods
 
-  public static DBMD readXML(InputStream is) throws JAXBException, IOException
-  {
-      return readXML(is, false);
-  }
+    protected Map<RelId, RelMetaData> relMDsByRelId()
+    {
+        if ( relMDsByRelId == null )
+            initDerivedData();
+
+        return relMDsByRelId;
+    }
+
+    private List<ForeignKey> fksByParentRelId(RelId relId)
+    {
+        if ( fksByParentRelId == null )
+            initDerivedData();
+
+        List<ForeignKey> fks = fksByParentRelId.get(relId);
+        if ( fks != null )
+            return fks;
+        else
+            return Collections.emptyList();
+    }
+
+    private List<ForeignKey> fksByChildRelId(RelId relId)
+    {
+        if ( fksByChildRelId == null )
+            initDerivedData();
+
+        List<ForeignKey> fks = fksByChildRelId.get(relId);
+        if ( fks != null )
+            return fks;
+        else
+            return Collections.emptyList();
+    }
+
+    protected void initDerivedData()
+    {
+        relMDsByRelId = new HashMap<>();
+        fksByParentRelId = new HashMap<>();
+        fksByChildRelId = new HashMap<>();
+
+        for ( RelMetaData relMd : relMetaDatas )
+            relMDsByRelId.put(relMd.getRelationId(), relMd);
+
+        for (ForeignKey fk : foreignKeys)
+        {
+            RelId srcRelId = fk.getSourceRelationId();
+            RelId tgtRelId = fk.getTargetRelationId();
+
+            List<ForeignKey> fksFromChild = fksByChildRelId.computeIfAbsent(srcRelId, k -> new ArrayList<>());
+            fksFromChild.add(fk);
+
+            List<ForeignKey> fksToParent = fksByParentRelId.computeIfAbsent(tgtRelId, k -> new ArrayList<>());
+            fksToParent.add(fk);
+        }
+    }
+
+    // Derived data accessor methods
+    /////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////
+    // Database object name manipulations
+
+    // Normalize a database object name.
+    private String normalizeName(String id)
+    {
+        if ( id.startsWith("\"") && id.endsWith("\"") )
+            return id;
+        else if ( caseSensitivity == CaseSensitivity.INSENSITIVE_STORED_LOWER )
+            return id.toLowerCase();
+        else if ( caseSensitivity == CaseSensitivity.INSENSITIVE_STORED_UPPER )
+            return id.toUpperCase();
+        else
+            return id;
+    }
+
+    private Set<String> normalizeNames(Set<String> names)
+    {
+        return names.stream().map(this::normalizeName).collect(toSet());
+    }
 
 
-  @Override
-  public int hashCode()
-  {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + ((caseSensitivity == null) ? 0 : caseSensitivity.hashCode());
-      result = prime * result + dbmsMajorVersion;
-      result = prime * result + dbmsMinorVersion;
-      result = prime * result + ((dbmsName == null) ? 0 : dbmsName.hashCode());
-      result = prime * result + ((dbmsVersion == null) ? 0 : dbmsVersion.hashCode());
-      result = prime * result + ((foreignKeys == null) ? 0 : foreignKeys.hashCode());
-      result = prime * result + ((relMetaDatas == null) ? 0 : relMetaDatas.hashCode());
-      result = prime * result + ((requestedOwningSchemaName == null) ? 0 : requestedOwningSchemaName.hashCode());
-      return result;
-  }
+    public <E> Map<String, E> normalizeNameKeys(Map<String, E> mapWithIdentifierKeys)
+    {
+        Map<String, E> res = new HashMap<>();
+
+        for (Map.Entry<String, E> entry : mapWithIdentifierKeys.entrySet())
+        {
+            res.put(normalizeName(entry.getKey()), entry.getValue());
+        }
+
+        return res;
+    }
+
+    private static String dotQualify(Optional<String> alias, String name)
+    {
+        return alias.map(a -> a + "." + name).orElse(name);
+    }
 
 
-  @Override
-  public boolean equals(Object obj)
-  {
-      if (this == obj)
-          return true;
-      if (obj == null)
-          return false;
-      if (getClass() != obj.getClass())
-          return false;
-      DBMD other = (DBMD) obj;
-      if (caseSensitivity != other.caseSensitivity)
-          return false;
-      if (dbmsMajorVersion != other.dbmsMajorVersion)
-          return false;
-      if (dbmsMinorVersion != other.dbmsMinorVersion)
-          return false;
-      if (dbmsName == null)
-      {
-          if (other.dbmsName != null)
-              return false;
-      }
-      else if (!dbmsName.equals(other.dbmsName))
-          return false;
-      if (dbmsVersion == null)
-      {
-          if (other.dbmsVersion != null)
-              return false;
-      }
-      else if (!dbmsVersion.equals(other.dbmsVersion))
-          return false;
-      if (foreignKeys == null)
-      {
-          if (other.foreignKeys != null)
-              return false;
-      }
-      else if (!foreignKeys.equals(other.foreignKeys))
-          return false;
-      if (relMetaDatas == null)
-      {
-          if (other.relMetaDatas != null)
-              return false;
-      }
-      else if (!relMetaDatas.equals(other.relMetaDatas))
-          return false;
-      if (requestedOwningSchemaName == null)
-      {
-          if (other.requestedOwningSchemaName != null)
-              return false;
-      }
-      else if (!requestedOwningSchemaName.equals(other.requestedOwningSchemaName))
-          return false;
-      return true;
-  }
+    public RelId makeRelId(Optional<String> catalog, Optional<String> schema, String relName)
+    {
+        return new RelId(catalog.map(this::normalizeName), schema.map(this::normalizeName), normalizeName(relName));
+    }
 
-  private static final long serialVersionUID = 1L;
+    public RelId makeRelId(Optional<String> schema, String relName)
+    {
+        return new RelId(Optional.empty(), schema.map(this::normalizeName), normalizeName(relName));
+    }
+
+    public RelId makeRelId(String possiblySchemaQualifiedRelName)
+    {
+        Optional<String> schema;
+        String relName;
+
+        int dotix = possiblySchemaQualifiedRelName.indexOf('.');
+
+        if ( dotix == -1 )
+        {
+            schema = getSchemaName();
+            relName = possiblySchemaQualifiedRelName;
+        }
+        else
+        {
+            schema = Optional.of(possiblySchemaQualifiedRelName.substring(0, dotix));
+            relName = possiblySchemaQualifiedRelName.substring(dotix + 1);
+        }
+
+        return new RelId(Optional.empty(), schema.map(this::normalizeName), normalizeName(relName));
+    }
+
+    // Database object name manipulations
+    ////////////////////////////////////////////////////////
 }

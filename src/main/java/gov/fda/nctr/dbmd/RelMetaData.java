@@ -1,45 +1,37 @@
 package gov.fda.nctr.dbmd;
 
-import java.io.Serializable;
 import java.util.*;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlEnum;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import static java.util.stream.Collectors.toList;
 
 
-@XmlAccessorType(XmlAccessType.FIELD)
-public class RelMetaData implements Serializable {
+public class RelMetaData {
 
-    @XmlElement(name="rel-id")
-    RelId relId;
+    private RelId relId;
 
-    @XmlAttribute(name="rel-type")
-    RelType relType;
+    private RelType relType;
 
-    @XmlElement(name="rel-comment")
-    String relComment;
+    private Optional<String> relComment;
 
-    @XmlElementWrapper(name = "fields")
-    @XmlElement(name="field")
-    List<Field> fields;
+    private List<Field> fields;
 
-    @XmlEnum
     public enum RelType { Table, View, Unknown }
 
 
-    public RelMetaData(RelId rel_id,
-                       RelType rel_type,
-                       String rel_comment,
-                       List<Field> fs)
+    public RelMetaData
+        (
+            RelId relId,
+            RelType relType,
+            Optional<String> relComment,
+            List<Field> fields
+        )
     {
-        relId = rel_id;
-        relType = rel_type;
-        relComment = rel_comment;
-        fields = fs;
+        this.relId = relId;
+        this.relType = relType;
+        this.relComment = relComment;
+        this.fields = fields;
     }
 
     protected RelMetaData() {}
@@ -48,87 +40,37 @@ public class RelMetaData implements Serializable {
 
     public RelType getRelationType() { return relType; }
 
-    public String getRelationComment() { return relComment; }
+    public Optional<String> getRelationComment() { return relComment; }
 
     public List<Field> getFields() { return fields; }
 
-
+    @JsonIgnore()
     public List<Field> getPrimaryKeyFields()
     {
         List<Field> pks = new ArrayList<>();
 
-        for(Field f: fields)
+        for ( Field f: fields )
         {
-            if ( f.pkPartNum != null )
+            if ( f.getPrimaryKeyPartNumber() != null )
                 pks.add(f);
         }
 
-        pks.sort(Comparator.comparingInt(f -> f.pkPartNum));
+        pks.sort(Comparator.comparingInt(f -> f.getPrimaryKeyPartNumber()));
 
         return pks;
     }
 
+    @JsonIgnore()
     public List<String> getPrimaryKeyFieldNames()
     {
         return getPrimaryKeyFieldNames(null);
     }
 
-    public List<String> getPrimaryKeyFieldNames(String alias)
+    public List<String> getPrimaryKeyFieldNames(Optional<String> alias)
     {
-        List<String> names = new ArrayList<>();
-
-        for(Field f: getPrimaryKeyFields())
-            names.add(alias != null ? alias + "." + f.getName() : f.getName());
-
-        return names;
+        return
+            getPrimaryKeyFields().stream()
+            .map(f -> alias.map(a -> a + "." + f.getName()).orElse(f.getName()))
+            .collect(toList());
     }
-
-
-    @Override
-    public int hashCode()
-    {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((fields == null) ? 0 : fields.hashCode());
-        result = prime * result + ((relComment == null) ? 0 : relComment.hashCode());
-        result = prime * result + ((relId == null) ? 0 : relId.hashCode());
-        result = prime * result + ((relType == null) ? 0 : relType.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        RelMetaData other = (RelMetaData) obj;
-        if (fields == null)
-        {
-            if (other.fields != null)
-                return false;
-        }
-        else if (!fields.equals(other.fields))
-            return false;
-        if (relComment == null)
-        {
-            if (other.relComment != null)
-                return false;
-        }
-        else if (!relComment.equals(other.relComment))
-            return false;
-        if (relId == null)
-        {
-            if (other.relId != null)
-                return false;
-        }
-        else if (!relId.equals(other.relId))
-            return false;
-        return relType == other.relType;
-    }
-
-    private static final long serialVersionUID = 1L;
 }

@@ -4,48 +4,30 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>gov.fda.nctr</groupId>
   <artifactId>dbmd</artifactId>
-  <version>1.1.5</version>
+  <version>2.0.0</version>
   <name>Java Database Metadata Library</name>
-
-  <distributionManagement>
-    <repository>
-      <id>releases-repo</id>
-      <url>scpexe://${nctr_releases_scp_target}</url>
-    </repository>
-    <snapshotRepository>
-      <id>snapshots-repo</id>
-      <url>scpexe://${nctr_snapshots_scp_target}</url>
-      <uniqueVersion>false</uniqueVersion>
-    </snapshotRepository>
-  </distributionManagement>
-
-  <repositories>
-    <repository>
-        <id>releases-repo</id>
-        <name>NCTR Maven Releases Repository</name>
-        <url>${releases.url}</url>
-    </repository>
-    <repository>
-        <id>snapshots-repo</id>
-        <name>NCTR Maven Snapshots Repository</name>
-        <url>${snapshots.url}</url>
-    </repository>
-  </repositories>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
 
+  <dependencies>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.9.8</version>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.6.1</version>
+        <version>3.8.1</version>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+           <release>11</release>
         </configuration>
       </plugin>
       <plugin>
@@ -61,13 +43,5 @@
         </executions>
       </plugin>
     </plugins>
-    <extensions>
-      <!-- Enable use of scp for deployment. -->
-      <extension>
-        <groupId>org.apache.maven.wagon</groupId>
-        <artifactId>wagon-ssh-external</artifactId>
-        <version>1.0-beta-6</version>
-      </extension>
-    </extensions>
   </build>
 </project>

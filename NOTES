@@ -1,0 +1,6 @@
+Replace jaxb serialization with Jackson serialization in main function.
+
+Check whether equals() overrides are actually used anywhere other than tests?
+  If not, remove them.
+  Leave RelId's, which are used.
+
