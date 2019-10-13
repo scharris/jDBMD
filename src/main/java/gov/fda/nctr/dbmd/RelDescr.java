@@ -1,6 +1,7 @@
 package gov.fda.nctr.dbmd;
 
 import java.util.Optional;
+import static java.util.Objects.requireNonNull;
 
 import gov.fda.nctr.dbmd.RelMetaData.RelType;
 
@@ -15,10 +16,9 @@ public class RelDescr {
 
     public RelDescr(RelId relId, RelType relType, Optional<String> relComment)
     {
-        super();
-        this.relId = relId;
-        this.relType = relType;
-        this.relComment = relComment;
+        this.relId = requireNonNull(relId);
+        this.relType = requireNonNull(relType);
+        this.relComment = requireNonNull(relComment);
     }
 
     protected RelDescr() {}

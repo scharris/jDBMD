@@ -1,5 +1,8 @@
-jdbc-connect-url=jdbc:oracle:thin:@localhost.oravm:1521:orcl
-jdbc-driver-class=oracle.jdbc.OracleDriver
-user=tckb
-password=tckb
-relations-owner=tckb
+jdbc-driver-class=org.postgresql.Driver
+jdbc-connect-url=jdbc:postgresql://localhost:5432/xdagentest
+user=xdagentest
+password=xdagentest
+relations-owner=xdagentest
+# date-mapping => DATES_AS_DRIVER_REPORTED | DATES_AS_TIMESTAMPS | DATES_AS_DATES
+date-mapping=DATES_AS_DRIVER_REPORTED
+#exclude-relations-fqname-regex

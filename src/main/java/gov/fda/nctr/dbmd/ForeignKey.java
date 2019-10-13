@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -19,17 +21,16 @@ public class ForeignKey implements Serializable {
 
     public enum EquationStyle {SOURCE_ON_LEFTHAND_SIDE, TARGET_ON_LEFTHAND_SIDE}
 
-
     public ForeignKey
         (
-            RelId src,
-            RelId tgt,
+            RelId srcRel,
+            RelId tgtRel,
             List<Component> components
         )
     {
-        srcRel = src;
-        tgtRel = tgt;
-        this.components = components;
+        this.srcRel = requireNonNull(srcRel);
+        this.tgtRel = requireNonNull(tgtRel);
+        this.components = unmodifiableList(new ArrayList<>(requireNonNull(components)));
     }
 
     protected ForeignKey() {}

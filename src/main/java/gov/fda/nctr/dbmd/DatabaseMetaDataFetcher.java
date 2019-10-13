@@ -1,15 +1,22 @@
 package gov.fda.nctr.dbmd;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.sql.*;
 import java.util.*;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import gov.fda.nctr.dbmd.RelMetaData.RelType;
+import static gov.fda.nctr.dbmd.RelMetaData.RelType.Table;
+import static gov.fda.nctr.dbmd.RelMetaData.RelType.View;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+
+import gov.fda.nctr.dbmd.RelMetaData.RelType;
 
 
 public class DatabaseMetaDataFetcher {
@@ -34,7 +41,6 @@ public class DatabaseMetaDataFetcher {
         this.dateMapping = mapping;
     }
 
-
     public DBMD fetchMetaData
         (
             Connection conn,
@@ -42,7 +48,7 @@ public class DatabaseMetaDataFetcher {
             boolean includeTables,
             boolean includeViews,
             boolean includeFks,
-            Pattern excludeRelsPattern
+            Optional<Pattern> excludeRelsPattern
         )
         throws SQLException
     {
@@ -64,19 +70,19 @@ public class DatabaseMetaDataFetcher {
             boolean includeTables,
             boolean includeViews,
             boolean includeFks,
-            Pattern excludeRelsPattern
+            Optional<Pattern> excludeRelsPat
         )
         throws SQLException
     {
         CaseSensitivity caseSens = getDatabaseCaseSensitivity(dbmd);
 
-        Optional<String> normdSchema = schema.map(s -> normalizeDatabaseIdentifier(s, caseSens));
+        Optional<String> nSchema = schema.map(s -> normalizeDatabaseIdentifier(s, caseSens));
 
-        List<RelDescr> relDescrs = fetchRelationDescriptions(dbmd, normdSchema, includeTables, includeViews, excludeRelsPattern);
+        List<RelDescr> relDescrs = fetchRelationDescriptions(dbmd, nSchema, includeTables, includeViews, excludeRelsPat);
 
-        List<RelMetaData> relMds = fetchRelationMetaDatas(relDescrs, normdSchema, dbmd);
+        List<RelMetaData> relMds = fetchRelationMetaDatas(relDescrs, nSchema, dbmd);
 
-        List<ForeignKey> fks = includeFks ? fetchForeignKeys(normdSchema, dbmd, excludeRelsPattern) : emptyList();
+        List<ForeignKey> fks = includeFks ? fetchForeignKeys(nSchema, dbmd, excludeRelsPat) : emptyList();
 
         String dbmsName = dbmd.getDatabaseProductName();
         String dbmsVer = dbmd.getDatabaseProductVersion();
@@ -85,7 +91,7 @@ public class DatabaseMetaDataFetcher {
 
         return
             new DBMD(
-                normdSchema,
+                nSchema,
                 relMds,
                 fks,
                 caseSens,
@@ -103,7 +109,7 @@ public class DatabaseMetaDataFetcher {
             Optional<String> schema,
             boolean includeTables,
             boolean includeViews,
-            Pattern excludeRelsPattern
+            Optional<Pattern> excludeRelsPattern
         )
         throws SQLException
     {
@@ -123,7 +129,7 @@ public class DatabaseMetaDataFetcher {
             Optional<String> schema,
             boolean includeTables,
             boolean includeViews,
-            Pattern excludeRelsPattern
+            Optional<Pattern> excludeRelsPattern
         )
         throws SQLException
     {
@@ -135,7 +141,7 @@ public class DatabaseMetaDataFetcher {
         if ( includeViews )
             relTypes.add("VIEW");
 
-        ResultSet rs = dbmd.getTables(null, schema.orElse(null), null, relTypes.toArray(new String[relTypes.size()]));
+        ResultSet rs = dbmd.getTables(null, schema.orElse(null), null, relTypes.toArray(new String[0]));
 
         while ( rs.next() )
         {
@@ -145,9 +151,9 @@ public class DatabaseMetaDataFetcher {
 
             RelId relId = new RelId(cat, relSchema, relName);
 
-            if ( excludeRelsPattern == null || !excludeRelsPattern.matcher(relId.getIdString()).matches() )
+            if ( !matches(excludeRelsPattern, relId.getIdString()) )
             {
-                RelType relType = rs.getString("TABLE_TYPE").toLowerCase().equals("table") ? RelType.Table : RelType.View;
+                RelType relType = rs.getString("TABLE_TYPE").toLowerCase().equals("table") ? Table : View;
 
                 relDescrs.add(new RelDescr(relId, relType, optn(rs.getString("REMARKS"))));
             }
@@ -175,12 +181,12 @@ public class DatabaseMetaDataFetcher {
         )
         throws SQLException
     {
-        Map<RelId,RelDescr> relDescrsByRelId = relDescrs.stream().collect(toMap(RelDescr::getRelationId, Function.identity()));
+        Map<RelId,RelDescr> relDescrsByRelId = relDescrs.stream().collect(toMap(RelDescr::getRelationId, identity()));
 
         try ( ResultSet colsRS = dbmd.getColumns(null, schema.orElse(null), "%", "%") )
         {
             List<RelMetaData> relMds = new ArrayList<>();
-            RelMetaData accumRelMd = null;
+            RelMetaDataBuilder rmdBldr = null;
 
             while ( colsRS.next() )
             {
@@ -190,28 +196,27 @@ public class DatabaseMetaDataFetcher {
 
                 RelId relId = new RelId(cat, relSchema, relName);
 
-                RelDescr relDescr = relDescrsByRelId.get(relId); // may be null if this relation is not in the passed relDescrs list.
-
-                if ( relDescr != null && relDescr.getRelationType() != null )
+                RelDescr relDescr = relDescrsByRelId.get(relId);
+                if ( relDescr != null ) // Include this relation?
                 {
                     Field f = makeField(colsRS, dbmd);
 
                     // Relation changed ?
-                    if ( accumRelMd == null || !relId.equals(accumRelMd.getRelationId()) )
+                    if ( rmdBldr == null || !relId.equals(rmdBldr.relId) )
                     {
-                        // done with the old one if any
-                        if ( accumRelMd != null )
-                            relMds.add(accumRelMd);
+                        // finalize previous if any
+                        if ( rmdBldr != null )
+                            relMds.add(rmdBldr.build());
 
-                        accumRelMd = new RelMetaData(relId, relDescr.getRelationType(), relDescr.getRelationComment(), emptyList());
+                        rmdBldr = new RelMetaDataBuilder(relId, relDescr.getRelationType(), relDescr.getRelationComment());
                     }
 
-                    accumRelMd.getFields().add(f);
+                    rmdBldr.addField(f);
                 }
             }
 
-            if ( accumRelMd != null )
-                relMds.add(accumRelMd);
+            if ( rmdBldr != null )
+                relMds.add(rmdBldr.build());
 
             return relMds;
         }
@@ -221,7 +226,7 @@ public class DatabaseMetaDataFetcher {
         (
             Optional<String> schema,
             Connection conn,
-            Pattern excludeRelsPattern
+            Optional<Pattern> excludeRelsPattern
         )
         throws SQLException
     {
@@ -232,7 +237,7 @@ public class DatabaseMetaDataFetcher {
         (
             Optional<String> schema,
             DatabaseMetaData dbmd,
-            Pattern excludeRelsPattern
+            Optional<Pattern> excludeRelsPattern
         )
         throws SQLException
     {
@@ -240,46 +245,41 @@ public class DatabaseMetaDataFetcher {
 
         try ( ResultSet rs = dbmd.getImportedKeys(null, schema.orElse(null), null) )
         {
-            RelId srcRel = null;
-            RelId tgtRel = null;
-            List<ForeignKey.Component> comps = null;
+            FkBuilder fkBldr = null;
 
             while ( rs.next() )
             {
                 short compNum = rs.getShort(9);
 
-                if ( compNum == 1 )
+                if ( compNum == 1 ) // starting new fk
                 {
-                    // If new fk starting then finalize the one we were accumulating
-                    if ( comps != null &&
-                         (excludeRelsPattern == null ||
-                           (!excludeRelsPattern.matcher(srcRel.getIdString()).matches() &&
-                            !excludeRelsPattern.matcher(tgtRel.getIdString()).matches())))
-                    {
-                        fks.add(new ForeignKey(srcRel, tgtRel, comps));
-                    }
+                    // Finalize previous fk if any.
+                    if ( fkBldr != null && fkBldr.neitherRelMatches(excludeRelsPattern) )
+                        fks.add(fkBldr.build());
 
-                    srcRel = new RelId(optn(rs.getString("FKTABLE_CAT")), optn(rs.getString("FKTABLE_SCHEM")), rs.getString("FKTABLE_NAME"));
-                    tgtRel = new RelId(optn(rs.getString("PKTABLE_CAT")), optn(rs.getString("PKTABLE_SCHEM")), rs.getString("PKTABLE_NAME"));
-
-                    comps = new ArrayList<>();
-                    comps.add(new ForeignKey.Component(rs.getString("FKCOLUMN_NAME"), rs.getString("PKCOLUMN_NAME")));
+                    fkBldr = new FkBuilder(
+                        new RelId(optn(rs.getString("FKTABLE_CAT")),
+                                  optn(rs.getString("FKTABLE_SCHEM")),
+                                  rs.getString("FKTABLE_NAME")),
+                        new RelId(optn(rs.getString("PKTABLE_CAT")),
+                                  optn(rs.getString("PKTABLE_SCHEM")),
+                                  rs.getString("PKTABLE_NAME"))
+                    );
+                    fkBldr.addComponent(
+                        new ForeignKey.Component(rs.getString("FKCOLUMN_NAME"), rs.getString("PKCOLUMN_NAME"))
+                    );
                 }
-                else
+                else // adding another fk component
                 {
-                    comps.add(new ForeignKey.Component(rs.getString("FKCOLUMN_NAME"), rs.getString("PKCOLUMN_NAME")));
-                }
-            }
-
-            if ( comps != null )
-            {
-                if ( excludeRelsPattern == null ||
-                     (!excludeRelsPattern.matcher(srcRel.getIdString()).matches() &&
-                      !excludeRelsPattern.matcher(tgtRel.getIdString()).matches()) )
-                {
-                    fks.add(new ForeignKey(srcRel, tgtRel, comps));
+                    requireNonNull(fkBldr); // because we should have seen a component # 1 before entering here
+                    fkBldr.addComponent(
+                        new ForeignKey.Component(rs.getString("FKCOLUMN_NAME"), rs.getString("PKCOLUMN_NAME"))
+                    );
                 }
             }
+
+            if ( fkBldr != null && fkBldr.neitherRelMatches(excludeRelsPattern) )
+                fks.add(fkBldr.build());
         }
 
         return fks;
@@ -315,13 +315,10 @@ public class DatabaseMetaDataFetcher {
             return id;
     }
 
-    protected static Integer getRSInteger(ResultSet rs, String colName) throws SQLException
+    protected static Optional<Integer> getRSInt(ResultSet rs, String colName) throws SQLException
     {
         int i = rs.getInt(colName);
-        if (rs.wasNull())
-            return null;
-        else
-            return i;
+        return rs.wasNull() ? Optional.empty() : Optional.of(i);
     }
 
     public static boolean isJdbcTypeNumeric(Integer jdbcType)
@@ -340,47 +337,37 @@ public class DatabaseMetaDataFetcher {
         {
             // Fetch the primary key field names and part numbers for this relation
             Map<String, Integer> pkSeqNumsByName = new HashMap<>();
-
             while (pkRS.next())
                 pkSeqNumsByName.put(pkRS.getString(4), pkRS.getInt(5));
             pkRS.close();
 
             String name = colsRS.getString("COLUMN_NAME");
-            Integer typeCode = getRSInteger(colsRS, "DATA_TYPE");
-            String dbNativeTypeName = colsRS.getString("TYPE_NAME");
+            int typeCode = colsRS.getInt("DATA_TYPE");
+            String dbType = colsRS.getString("TYPE_NAME");
 
             // Handle special cases/conversions for the type code.
             if ( typeCode == Types.DATE || typeCode == Types.TIMESTAMP )
-                typeCode = getTypeCodeForDateOrTimestampColumn(typeCode, dbNativeTypeName);
-            else if ( "XMLTYPE".equals(dbNativeTypeName)  || "SYS.XMLTYPE".equals(dbNativeTypeName) )
-                typeCode = Types.SQLXML; // Oracle uses proprietary "OPAQUE" code of 2007 as of 11.2, should be Types.SQLXML = 2009.
+                typeCode = getTypeCodeForDateOrTimestampColumn(typeCode, dbType);
+            else if ( "XMLTYPE".equals(dbType)  || "SYS.XMLTYPE".equals(dbType) )
+                // Oracle uses proprietary "OPAQUE" code of 2007 as of 11.2, should be Types.SQLXML = 2009.
+                typeCode = Types.SQLXML;
 
-            Integer size = getRSInteger(colsRS, "COLUMN_SIZE");
-            Integer length = isJdbcTypeChar(typeCode) ? size : null;
-            Integer nullableDb = getRSInteger(colsRS, "NULLABLE");
-            Boolean nullable =
-                (nullableDb == ResultSetMetaData.columnNoNulls) ?
-                    Boolean.FALSE
-                    : (nullableDb == ResultSetMetaData.columnNullable) ? Boolean.TRUE : null;
-            Integer fractionalDigits = isJdbcTypeNumeric(typeCode) ? getRSInteger(colsRS, "DECIMAL_DIGITS") : null;
-            Integer precision = isJdbcTypeNumeric(typeCode) ? size : null;
-            Integer radix = isJdbcTypeNumeric(typeCode) ? getRSInteger(colsRS, "NUM_PREC_RADIX") : null;
-            Integer pkPartNum = pkSeqNumsByName.get(name);
-            String comment = colsRS.getString("REMARKS");
+            Optional<Integer> size = getRSInt(colsRS, "COLUMN_SIZE");
+            Optional<Integer> length = isJdbcTypeChar(typeCode) ? size : Optional.empty();
+            Optional<Boolean> nullable = getRSInt(colsRS, "NULLABLE").flatMap(n ->
+                n == ResultSetMetaData.columnNullable ? Optional.of(true) :
+                n == ResultSetMetaData.columnNoNulls ? Optional.of(false) :
+                    Optional.empty()
+            );
+            Optional<Integer> fracDigs =
+                isJdbcTypeNumeric(typeCode) ? getRSInt(colsRS, "DECIMAL_DIGITS") : Optional.empty();
+            Optional<Integer> prec = isJdbcTypeNumeric(typeCode) ? size : Optional.empty();
+            Optional<Integer> rad =
+                isJdbcTypeNumeric(typeCode) ? getRSInt(colsRS, "NUM_PREC_RADIX") : Optional.empty();
+            Optional<Integer> pkPart = optn(pkSeqNumsByName.get(name));
+            Optional<String> comment = optn(colsRS.getString("REMARKS"));
 
-            return
-                new Field(
-                    name,
-                    typeCode,
-                    dbNativeTypeName,
-                    length,
-                    precision,
-                    fractionalDigits,
-                    radix,
-                    nullable,
-                    pkPartNum,
-                    comment
-                );
+            return new Field(name, typeCode, dbType, length, prec, fracDigs, rad, nullable, pkPart, comment);
         }
     }
 
@@ -390,7 +377,7 @@ public class DatabaseMetaDataFetcher {
             String dbNativeType
         )
     {
-        String dbNativeTypeUc = dbNativeType != null ? dbNativeType.toUpperCase() : null;
+        String dbNativeTypeUc = dbNativeType.toUpperCase();
 
         if ( "DATE".equals(dbNativeTypeUc) )
         {
@@ -403,108 +390,193 @@ public class DatabaseMetaDataFetcher {
         return driverReportedTypeCode;
     }
 
-    // Get the property value for the first contained key, or null.
-    private static String getProperty(Properties p, String... keys)
+
+    /////////////////////////////////////////////////////////
+    // auxiliary builder classes
+
+    private static class FkBuilder {
+
+        private RelId srcRel;
+        private RelId tgtRel;
+        private List<ForeignKey.Component> comps;
+
+        public FkBuilder(RelId srcRel, RelId tgtRel)
+        {
+            this.srcRel = srcRel;
+            this.tgtRel = tgtRel;
+            this.comps = new ArrayList<>();
+        }
+
+        boolean neitherRelMatches(Optional<Pattern> relIdsPattern)
+        {
+            return !(matches(relIdsPattern, srcRel.getIdString()) || matches(relIdsPattern, tgtRel.getIdString()));
+        }
+
+        ForeignKey build() { return new ForeignKey(srcRel, tgtRel, comps); }
+
+        void addComponent(ForeignKey.Component comp) { comps.add(comp); }
+    }
+
+    private static class RelMetaDataBuilder {
+
+        private final RelId relId;
+
+        private final RelMetaData.RelType relType;
+
+        private final Optional<String> relComment;
+
+        private final List<Field> fields;
+
+        public RelMetaDataBuilder
+                (
+                        RelId relId,
+                        RelType relType,
+                        Optional<String> relComment
+                )
+        {
+            this.relId = requireNonNull(relId);
+            this.relType = requireNonNull(relType);
+            this.relComment = requireNonNull(relComment);
+            this.fields = new ArrayList<>();
+        }
+
+        public void addField(Field f) { fields.add(f); }
+
+        public RelMetaData build()
+        {
+            return new RelMetaData(relId, relType, relComment, fields);
+        }
+    }
+
+    // auxiliary builder classes
+    /////////////////////////////////////////////////////////
+
+
+    private static boolean matches(Optional<Pattern> pat, String s)
+    {
+        return pat.map(p -> p.matcher(s).matches()).orElse(false);
+    }
+
+    private static <E> Optional<E> optn(E e)
+    {
+        return Optional.ofNullable(e);
+    }
+
+    // Get the property value for the first contained key if any.
+    private static Optional<String> getProperty(Properties p, String... keys)
     {
         for ( String key: keys )
         {
             if ( p.containsKey(key) )
-                return p.getProperty(key);
+                return Optional.of(p.getProperty(key));
         }
-        return null;
+        return Optional.empty();
     }
 
+    private static String requireProperty(Properties p, String... keys)
+    {
+        return getProperty(p, keys).orElseThrow(() ->
+                new RuntimeException("Property " + keys[0] + " is required.")
+        );
+    }
+
+    private static OutputStream outputStream(String pathOrDash) throws IOException
+    {
+        if ( "-".equals(pathOrDash) )
+            return System.out;
+        else
+            return new FileOutputStream(pathOrDash);
+    }
+
+    private static void printUsage(PrintStream ps)
+    {
+        ps.println("Expected arguments: jdbc-properties-file [dbmd-properties-file] output-file|-");
+
+        ps.println(
+            "jdbc properties file properties:\n  " +
+            "  jdbc-driver-class\n" +
+            "  jdbc-connect-url\n" +
+            "  user\n" +
+            "  password\n"
+        );
+
+        ps.println(
+            "dbmd properties file properties:\n  " +
+            "  date-mapping (DATES_AS_DRIVER_REPORTED | DATES_AS_TIMESTAMPS | DATES_AS_DATES)\n" +
+            "  relations-owner (schema name | *any-owners*)\n" +
+            "  exclude-relations-fqname-regex\n"
+        );
+    }
 
     public static void main(String[] args) throws Exception
     {
-        if ( args.length < 2 )
+        if ( args.length == 1 && args[0].equals("-h") || args[0].equals("--help") )
         {
-            System.err.println("Expected arguments: jdbc-properties-file [dbmd-properties-file] output-file");
-
-            System.err.println("jdbc properties file properties:\n  " +
-                    "  jdbc-driver-class\n" +
-                    "  jdbc-connect-url\n" +
-                    "  user\n" +
-                    "  password\n");
-
-            System.err.println("dbmd properties file properties:\n  " +
-                    "  date-mapping (DATES_AS_DRIVER_REPORTED | DATES_AS_TIMESTAMPS | DATES_AS_DATES)\n" +
-                    "  relations-owner (schema name | *any-owners*)\n" +
-                    "  exclude-relations-fqname-regex\n");
-
+            printUsage(System.out);
+            System.exit(0);
+        }
+        else if ( args.length < 2 )
+        {
+            printUsage(System.err);
             System.exit(1);
         }
 
         int argIx = 0;
 
         String jdbcPropsFilePath = args[argIx++];
-        String dbmdPropsFilePath = args.length == 3 ? args[argIx++] : null;
+        Optional<String> dbmdPropsFilePath = args.length == 3 ? Optional.of(args[argIx++]) : Optional.empty();
         String outputFilePath = args[argIx];
 
         Properties props = new Properties();
 
-        try
+        try ( OutputStream os = outputStream(outputFilePath);
+              InputStream propsIS = new FileInputStream(jdbcPropsFilePath) )
         {
-            props.load(new FileInputStream(jdbcPropsFilePath));
-            if ( dbmdPropsFilePath != null && !jdbcPropsFilePath.equals(dbmdPropsFilePath) )
-                props.load(new FileInputStream(dbmdPropsFilePath));
+            props.load(propsIS);
 
-            String connStr = getProperty(props, "jdbc.url", "jdbc-connect-url");
-            String driverClassname = getProperty(props, "jdbc.driverClassName", "jdbc-driver-class");
-            String user = getProperty(props, "jdbc.username", "user");
-            String password = getProperty(props, "jdbc.password", "password");
+            String driverClassname = requireProperty(props, "jdbc-driver-class", "jdbc.driverClassName");
+            String connStr = requireProperty(props, "jdbc-connect-url", "jdbc.url");
+            String user = requireProperty(props, "user", "jdbc.username");
+            String password = requireProperty(props, "password", "jdbc.password");
 
-            String dateMappingStr = props.getProperty("date-mapping");
-            DateMapping dateMapping = dateMappingStr != null ? DateMapping.valueOf(dateMappingStr) : DateMapping.DATES_AS_DRIVER_REPORTED;
+            Class.forName(driverClassname);
 
-            Optional<String> relsOwner = optn(props.getProperty("relations-owner"));
-            if ( relsOwner.isPresent() && "*any-owners*".equals(relsOwner.get()) )
-                relsOwner = Optional.empty();
+            try ( Connection conn = DriverManager.getConnection(connStr, user, password) )
+            {
+                dbmdPropsFilePath.ifPresent(dbmdPropsPath -> {
+                    try {
+                        if (!jdbcPropsFilePath.equals(dbmdPropsPath)) props.load(new FileInputStream(dbmdPropsPath));
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
+                    }
+                });
 
-            String excludeRelsRegex = props.getProperty("exclude-relations-fqname-regex");
-            Pattern excludeRelsPattern = excludeRelsRegex != null ? Pattern.compile(excludeRelsRegex) : null;
+                Optional<String> dateMappingStr = getProperty(props, "date-mapping");
+                DateMapping dateMapping = dateMappingStr.map(DateMapping::valueOf).orElse(DateMapping.DATES_AS_DRIVER_REPORTED);
 
-            if ( connStr == null )
-                throw new IllegalArgumentException("No jdbc-connect-url property found in config file.");
-            if ( user == null )
-                throw new IllegalArgumentException("No user property found in config file.");
-            if ( password == null )
-                throw new IllegalArgumentException("No password property found in config file.");
-
-
-            if ( driverClassname != null )
-                Class.forName(driverClassname);
-
-            Connection conn = DriverManager.getConnection(connStr, user, password);
-
-            DatabaseMetaDataFetcher dbmdFetcher = new DatabaseMetaDataFetcher(dateMapping);
-
-            DBMD dbmd =
-                dbmdFetcher.fetchMetaData(
-                    conn.getMetaData(),
-                    relsOwner,
-                    true,
-                    true,
-                    true,
-                    excludeRelsPattern
+                Optional<String> relsOwner = getProperty(props, "relations-owner").flatMap(o ->
+                    o.equals("*any-owners*") ? Optional.empty() : Optional.of(o)
                 );
 
-            FileOutputStream os = new FileOutputStream(outputFilePath);
+                Optional<Pattern> excludeRelsPat =
+                    getProperty(props, "exclude-relations-fqname-regex").map(Pattern::compile);
 
-            // TODO: Write json repr instead.
-//          dbmd.writeXML(os);
+                DBMD dbmd =
+                    new DatabaseMetaDataFetcher(dateMapping)
+                    .fetchMetaData(
+                        conn.getMetaData(),
+                        relsOwner,
+                        true,
+                        true,
+                        true,
+                        excludeRelsPat
+                    );
 
-            os.close();
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.registerModule(new Jdk8Module());
+                mapper.enable(SerializationFeature.INDENT_OUTPUT);
+                mapper.writeValue(os, dbmd);
+            }
         }
-        catch(Exception e)
-        {
-            e.printStackTrace();
-            throw e;
-        }
-    }
-
-    private static <E> Optional<E> optn(E e)
-    {
-        return Optional.ofNullable(e);
     }
 }

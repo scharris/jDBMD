@@ -1,7 +1,10 @@
 package gov.fda.nctr.dbmd;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Objects;
 import java.util.Optional;
+import static java.util.Objects.requireNonNull;
 
 
 public final class RelId {
@@ -14,9 +17,9 @@ public final class RelId {
 
     public RelId(Optional<String> catalog, Optional<String> schema, String name)
     {
-        this.catalog = catalog;
-        this.schema = schema;
-        this.name = name;
+        this.catalog = requireNonNull(catalog);
+        this.schema = requireNonNull(schema);
+        this.name = requireNonNull(name);
     }
 
     protected RelId() {}
@@ -33,6 +36,7 @@ public final class RelId {
         return getIdString();
     }
 
+    @JsonIgnore
     public String getIdString()
     {
         return

@@ -1,10 +1,11 @@
 package gov.fda.nctr.dbmd;
 
 import java.util.*;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import static java.util.stream.Collectors.toList;
 
 
 public class RelMetaData {
@@ -28,10 +29,10 @@ public class RelMetaData {
             List<Field> fields
         )
     {
-        this.relId = relId;
-        this.relType = relType;
-        this.relComment = relComment;
-        this.fields = fields;
+        this.relId = requireNonNull(relId);
+        this.relType = requireNonNull(relType);
+        this.relComment = requireNonNull(relComment);
+        this.fields = unmodifiableList(new ArrayList<>(requireNonNull(fields)));
     }
 
     protected RelMetaData() {}
@@ -51,11 +52,10 @@ public class RelMetaData {
 
         for ( Field f: fields )
         {
-            if ( f.getPrimaryKeyPartNumber() != null )
-                pks.add(f);
+            f.getPrimaryKeyPartNumber().ifPresent(n -> pks.add(f));
         }
 
-        pks.sort(Comparator.comparingInt(f -> f.getPrimaryKeyPartNumber()));
+        pks.sort(Comparator.comparingInt(f -> f.getPrimaryKeyPartNumber().orElse(0)));
 
         return pks;
     }

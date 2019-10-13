@@ -1,4 +1,7 @@
 #!/bin/sh
-dbmdjar=$(ls ../target/dbmd-*.jar | egrep -v sources)
+SCRIPTDIR=$(dirname "$0")
 
-java -cp $dbmdjar:ojdbc6.jar gov.fda.nctr.dbmd.DatabaseMetaDataFetcher sample.props sample.props sample.xml
+JAR=$(ls $SCRIPTDIR/../target/dbmd-*.jar | egrep -v sources)
+
+java -cp $SCRIPTDIR/../target/dbmd.jar:postgresql-42.2.8.jar \
+    gov.fda.nctr.dbmd.DatabaseMetaDataFetcher sample.props sample.props -

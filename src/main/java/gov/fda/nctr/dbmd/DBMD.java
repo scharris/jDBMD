@@ -2,10 +2,9 @@ package gov.fda.nctr.dbmd;
 
 import java.util.*;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
 public class DBMD
@@ -29,11 +28,10 @@ public class DBMD
 
     // derived data
     // Access these only via methods of the same name, which make sure these fields are initialized.
-    @JsonIgnore()
     private Map<RelId, RelMetaData> relMDsByRelId;
-    @JsonIgnore()
+
     private Map<RelId, List<ForeignKey>> fksByParentRelId;
-    @JsonIgnore()
+
     private Map<RelId, List<ForeignKey>> fksByChildRelId;
 
     public enum ForeignKeyScope
@@ -54,18 +52,17 @@ public class DBMD
             int dbmsMinorVersion
         )
     {
-        this.schemaName = schemaName;
-        this.relMetaDatas = sortedMds(relMetaDatas);
-        this.foreignKeys = sortedFks(foreignKeys);
-        this.caseSensitivity = caseSensitivity;
-        this.dbmsName = dbmsName;
-        this.dbmsVersion = dbmsVersion;
+        this.schemaName = requireNonNull(schemaName);
+        this.relMetaDatas = sortedMds(requireNonNull(relMetaDatas));
+        this.foreignKeys = sortedFks(requireNonNull(foreignKeys));
+        this.caseSensitivity = requireNonNull(caseSensitivity);
+        this.dbmsName = requireNonNull(dbmsName);
+        this.dbmsVersion = requireNonNull(dbmsVersion);
         this.dbmsMajorVersion = dbmsMajorVersion;
         this.dbmsMinorVersion = dbmsMinorVersion;
     }
 
     protected DBMD() {}
-
 
     public Optional<String> getSchemaName() { return schemaName; }
 
@@ -188,7 +185,7 @@ public class DBMD
     {
         List<ForeignKey> res = new ArrayList<>();
 
-        if ( childRelId.isEmpty() && parentRelId.isEmpty() )
+        if ( !childRelId.isPresent() && !parentRelId.isPresent() )
         {
             res.addAll(foreignKeys);
         }
@@ -198,11 +195,7 @@ public class DBMD
             res.retainAll(fksByParentRelId(parentRelId.get()));
         }
         else
-            res.addAll(
-                childRelId.isPresent() ?
-                    fksByChildRelId(childRelId.get())
-                    : fksByParentRelId(parentRelId.get())
-            );
+            res.addAll(childRelId.map(this::fksByChildRelId).orElseGet(() -> fksByParentRelId(parentRelId.get())));
 
         if ( fkScope == ForeignKeyScope.REGISTERED_TABLES_ONLY )
         {
@@ -253,14 +246,15 @@ public class DBMD
 
         for ( ForeignKey fk : getForeignKeysFromTo(fromRel, toRel, fkScope) )
         {
-            if ( normdFkFieldNames.isEmpty() ||
+            if ( !normdFkFieldNames.isPresent() ||
                  fk.sourceFieldNamesSetEqualsNormalizedNamesSet(normdFkFieldNames.get()) )
             {
                 if ( soughtFk != null ) // already found an fk satisfying requirements?
                     throw new IllegalArgumentException(
-                    "Child table " + fromRelId + " has multiple foreign keys to parent table " + toRelId +
-                    (fieldNames != null ? " with the same specified source fields."
-                    : " and no foreign key fields were specified to disambiguate."));
+                        "Child table " + fromRelId + " has multiple foreign keys to parent table " + toRelId +
+                        (fieldNames.isPresent() ? " with the same specified source fields."
+                           : " and no foreign key fields were specified to disambiguate.")
+                    );
 
                 soughtFk = fk;
                 // No breaking from the loop here, so case that multiple fk's satisfy requirements can be detected.
@@ -376,9 +370,7 @@ public class DBMD
                 return comp;
         }
 
-        return strs1.size() < strs2.size() ? -1
-        : strs1.size() > strs2.size() ? 1
-        : 0;
+        return Integer.compare(strs1.size(), strs2.size());
     }
 
     // Sorting for deterministic output
@@ -388,7 +380,7 @@ public class DBMD
     /////////////////////////////////////////////////////////
     // Derived data accessor methods
 
-    protected Map<RelId, RelMetaData> relMDsByRelId()
+    private Map<RelId, RelMetaData> relMDsByRelId()
     {
         if ( relMDsByRelId == null )
             initDerivedData();
@@ -402,10 +394,7 @@ public class DBMD
             initDerivedData();
 
         List<ForeignKey> fks = fksByParentRelId.get(relId);
-        if ( fks != null )
-            return fks;
-        else
-            return Collections.emptyList();
+        return fks != null ? fks : Collections.emptyList();
     }
 
     private List<ForeignKey> fksByChildRelId(RelId relId)
@@ -414,13 +403,10 @@ public class DBMD
             initDerivedData();
 
         List<ForeignKey> fks = fksByChildRelId.get(relId);
-        if ( fks != null )
-            return fks;
-        else
-            return Collections.emptyList();
+        return fks != null ? fks : Collections.emptyList();
     }
 
-    protected void initDerivedData()
+    private void initDerivedData()
     {
         relMDsByRelId = new HashMap<>();
         fksByParentRelId = new HashMap<>();
@@ -467,7 +453,7 @@ public class DBMD
     }
 
 
-    public <E> Map<String, E> normalizeNameKeys(Map<String, E> mapWithIdentifierKeys)
+    public <E> Map<String,E> normalizeNameKeys(Map<String, E> mapWithIdentifierKeys)
     {
         Map<String, E> res = new HashMap<>();
 

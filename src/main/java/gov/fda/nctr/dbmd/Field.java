@@ -1,6 +1,10 @@
 package gov.fda.nctr.dbmd;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.sql.Types;
+import java.util.Optional;
+import static java.util.Objects.requireNonNull;
 
 
 public class Field {
@@ -11,44 +15,44 @@ public class Field {
 
     private String dbTypeName;
 
-    private Integer length;
+    private Optional<Integer> length;
 
-    private Integer precision;
+    private Optional<Integer> precision;
 
-    private Integer fractionalDigits;
+    private Optional<Integer> fractionalDigits;
 
-    private Integer radix;
+    private Optional<Integer> radix;
 
-    private Boolean isNullable;
+    private Optional<Boolean> isNullable;
 
-    private Integer pkPartNum;
+    private Optional<Integer> pkPartNum;
 
-    private String comment;
+    private Optional<String> comment;
 
     public Field
         (
             String name,
             int jdbcTypeCode,
             String dbTypeName,
-            Integer length,
-            Integer precision,
-            Integer fractionalDigits,
-            Integer radix,
-            Boolean isNullable,
-            Integer pkPartNum,
-            String comment
+            Optional<Integer> length,
+            Optional<Integer> precision,
+            Optional<Integer> fractionalDigits,
+            Optional<Integer> radix,
+            Optional<Boolean> isNullable,
+            Optional<Integer> pkPartNum,
+            Optional<String> comment
         )
     {
-        this.name = name;
-        this.jdbcTypeCode = jdbcTypeCode;
-        this.dbTypeName = dbTypeName;
-        this.length = length;
-        this.fractionalDigits = fractionalDigits;
-        this.radix = radix;
-        this.precision = precision;
-        this.isNullable = isNullable;
-        this.pkPartNum = pkPartNum;
-        this.comment = comment;
+        this.name = requireNonNull(name);
+        this.jdbcTypeCode = requireNonNull(jdbcTypeCode);
+        this.dbTypeName = requireNonNull(dbTypeName);
+        this.length = requireNonNull(length);
+        this.fractionalDigits = requireNonNull(fractionalDigits);
+        this.radix = requireNonNull(radix);
+        this.precision = requireNonNull(precision);
+        this.isNullable = requireNonNull(isNullable);
+        this.pkPartNum = requireNonNull(pkPartNum);
+        this.comment = requireNonNull(comment);
     }
 
     protected Field() {}
@@ -59,30 +63,29 @@ public class Field {
 
     public String getDatabaseType() { return dbTypeName; }
 
-    public Integer getLength() { return length; }
+    public Optional<Integer> getLength() { return length; }
 
-    public Integer getFractionalDigits() { return fractionalDigits; }
+    public Optional<Integer> getFractionalDigits() { return fractionalDigits; }
 
-    public Integer getRadix() { return radix; }
+    public Optional<Integer> getRadix() { return radix; }
 
-    public Integer getPrecision() { return precision; }
+    public Optional<Integer> getPrecision() { return precision; }
 
-    public Boolean getNullable() { return isNullable; }
+    public Optional<Boolean> getNullable() { return isNullable; }
 
-    public Integer getPrimaryKeyPartNumber() { return pkPartNum; }
+    public Optional<Integer> getPrimaryKeyPartNumber() { return pkPartNum; }
 
-    public String getComment() { return comment; }
+    public Optional<String> getComment() { return comment; }
 
+    @JsonIgnore
     public boolean isNumericType() { return isJdbcTypeNumeric(jdbcTypeCode); }
 
+    @JsonIgnore
     public boolean isCharacterType() { return isJdbcTypeChar(jdbcTypeCode); }
 
-    public static boolean isJdbcTypeNumeric(Integer jdbc_type)
+    public static boolean isJdbcTypeNumeric(int jdbcType)
     {
-           if ( jdbc_type == null )
-            return false;
-
-        switch (jdbc_type)
+        switch (jdbcType)
         {
         case Types.TINYINT:
         case Types.SMALLINT:
@@ -99,12 +102,9 @@ public class Field {
         }
     }
 
-    public static boolean isJdbcTypeChar(Integer jdbc_type)
+    public static boolean isJdbcTypeChar(int jdbcType)
     {
-        if ( jdbc_type == null )
-            return false;
-
-        switch (jdbc_type)
+        switch (jdbcType)
         {
         case Types.CHAR:
         case Types.VARCHAR:
