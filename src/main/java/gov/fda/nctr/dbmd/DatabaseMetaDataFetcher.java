@@ -145,11 +145,10 @@ public class DatabaseMetaDataFetcher {
 
         while ( rs.next() )
         {
-            Optional<String> cat = optn(rs.getString("TABLE_CAT"));
             Optional<String> relSchema = optn(rs.getString("TABLE_SCHEM"));
             String relName = rs.getString("TABLE_NAME");
 
-            RelId relId = new RelId(cat, relSchema, relName);
+            RelId relId = new RelId(relSchema, relName);
 
             if ( !matches(excludeRelsPattern, relId.getIdString()) )
             {
@@ -190,11 +189,10 @@ public class DatabaseMetaDataFetcher {
 
             while ( colsRS.next() )
             {
-                Optional<String> cat = optn(colsRS.getString("TABLE_CAT"));
                 Optional<String> relSchema = optn(colsRS.getString("TABLE_SCHEM"));
                 String relName = colsRS.getString("TABLE_NAME");
 
-                RelId relId = new RelId(cat, relSchema, relName);
+                RelId relId = new RelId(relSchema, relName);
 
                 RelDescr relDescr = relDescrsByRelId.get(relId);
                 if ( relDescr != null ) // Include this relation?
@@ -258,11 +256,9 @@ public class DatabaseMetaDataFetcher {
                         fks.add(fkBldr.build());
 
                     fkBldr = new FkBuilder(
-                        new RelId(optn(rs.getString("FKTABLE_CAT")),
-                                  optn(rs.getString("FKTABLE_SCHEM")),
+                        new RelId(optn(rs.getString("FKTABLE_SCHEM")),
                                   rs.getString("FKTABLE_NAME")),
-                        new RelId(optn(rs.getString("PKTABLE_CAT")),
-                                  optn(rs.getString("PKTABLE_SCHEM")),
+                        new RelId(optn(rs.getString("PKTABLE_SCHEM")),
                                   rs.getString("PKTABLE_NAME"))
                     );
                     fkBldr.addComponent(
@@ -544,11 +540,12 @@ public class DatabaseMetaDataFetcher {
             try ( Connection conn = DriverManager.getConnection(connStr, user, password) )
             {
                 dbmdPropsFilePath.ifPresent(dbmdPropsPath -> {
-                    try {
-                        if (!jdbcPropsFilePath.equals(dbmdPropsPath)) props.load(new FileInputStream(dbmdPropsPath));
-                    } catch (IOException ioe) {
-                        throw new RuntimeException(ioe);
+                    try
+                    {
+                        if (!jdbcPropsFilePath.equals(dbmdPropsPath))
+                            props.load(new FileInputStream(dbmdPropsPath));
                     }
+                    catch (IOException ioe) { throw new RuntimeException(ioe); }
                 });
 
                 Optional<String> dateMappingStr = getProperty(props, "date-mapping");

@@ -9,22 +9,17 @@ import static java.util.Objects.requireNonNull;
 
 public final class RelId {
 
-    private Optional<String> catalog;
-
     private Optional<String> schema;
 
     private String name;
 
-    public RelId(Optional<String> catalog, Optional<String> schema, String name)
+    public RelId(Optional<String> schema, String name)
     {
-        this.catalog = requireNonNull(catalog);
         this.schema = requireNonNull(schema);
         this.name = requireNonNull(name);
     }
 
     protected RelId() {}
-
-    public Optional<String> getCatalog() { return catalog; }
 
     public Optional<String> getSchema() { return schema; }
 
@@ -39,10 +34,7 @@ public final class RelId {
     @JsonIgnore
     public String getIdString()
     {
-        return
-            catalog.map(cat ->  "[" + cat + "]").orElse("") +
-            schema.map(s -> s + ".").orElse("") +
-            name;
+        return schema.map(s -> s + ".").orElse("") + name;
     }
 
 
@@ -54,7 +46,6 @@ public final class RelId {
         {
             RelId o = (RelId)other;
             return
-                Objects.equals(catalog, o.catalog) &&
                 Objects.equals(schema, o.schema) &&
                 Objects.equals(name, o.name);
         }
@@ -62,6 +53,6 @@ public final class RelId {
 
     public int hashCode()
     {
-        return catalog.hashCode() + 3 * (schema.hashCode()  + 7 * name.hashCode());
+        return (schema.hashCode()  + 7 * name.hashCode());
     }
 }

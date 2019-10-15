@@ -3,6 +3,7 @@ package gov.fda.nctr.dbmd;
 import java.util.*;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -63,7 +64,7 @@ public class RelMetaData {
     @JsonIgnore()
     public List<String> getPrimaryKeyFieldNames()
     {
-        return getPrimaryKeyFieldNames(null);
+        return getPrimaryKeyFieldNames(empty());
     }
 
     public List<String> getPrimaryKeyFieldNames(Optional<String> alias)

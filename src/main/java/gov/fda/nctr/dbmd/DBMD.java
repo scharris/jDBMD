@@ -471,14 +471,9 @@ public class DBMD
     }
 
 
-    public RelId makeRelId(Optional<String> catalog, Optional<String> schema, String relName)
-    {
-        return new RelId(catalog.map(this::normalizeName), schema.map(this::normalizeName), normalizeName(relName));
-    }
-
     public RelId makeRelId(Optional<String> schema, String relName)
     {
-        return new RelId(Optional.empty(), schema.map(this::normalizeName), normalizeName(relName));
+        return new RelId(schema.map(this::normalizeName), normalizeName(relName));
     }
 
     public RelId makeRelId(String possiblySchemaQualifiedRelName)
@@ -499,7 +494,7 @@ public class DBMD
             relName = possiblySchemaQualifiedRelName.substring(dotix + 1);
         }
 
-        return new RelId(Optional.empty(), schema.map(this::normalizeName), normalizeName(relName));
+        return new RelId(schema.map(this::normalizeName), normalizeName(relName));
     }
 
     // Database object name manipulations
