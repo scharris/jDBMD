@@ -1,0 +1,692 @@
+schemaName: "xdagentest"
+dbmsName: "PostgreSQL"
+dbmsVersion: "12.0"
+dbmsMajorVersion: 12
+dbmsMinorVersion: 0
+caseSensitivity: "INSENSITIVE_STORED_LOWER"
+relationMetaDatas:
+- relationId:
+    schema: "xdagentest"
+    name: "advisory"
+  relationType: "Table"
+  relationComment: null
+  fields:
+  - name: "id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 1
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "drug_id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "advisory_type_id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "text"
+    databaseType: "varchar"
+    nullable: false
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 2000
+    precision: null
+    fractionalDigits: null
+    radix: null
+- relationId:
+    schema: "xdagentest"
+    name: "advisory_type"
+  relationType: "Table"
+  relationComment: null
+  fields:
+  - name: "id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 1
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "name"
+    databaseType: "varchar"
+    nullable: false
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 50
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "authority_id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+- relationId:
+    schema: "xdagentest"
+    name: "authority"
+  relationType: "Table"
+  relationComment: null
+  fields:
+  - name: "id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 1
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "name"
+    databaseType: "varchar"
+    nullable: false
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 200
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "url"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 500
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "description"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 2000
+    precision: null
+    fractionalDigits: null
+    radix: null
+- relationId:
+    schema: "xdagentest"
+    name: "brand"
+  relationType: "Table"
+  relationComment: null
+  fields:
+  - name: "drug_id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 1
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "brand_name"
+    databaseType: "varchar"
+    nullable: false
+    primaryKeyPartNumber: 2
+    comment: null
+    jdbcTypeCode: 12
+    length: 200
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "language_code"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 10
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "manufacturer_id"
+    databaseType: "int4"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+- relationId:
+    schema: "xdagentest"
+    name: "compound"
+  relationType: "Table"
+  relationComment: null
+  fields:
+  - name: "id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 1
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "display_name"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 50
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "nctr_isis_id"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 100
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "smiles"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 2000
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "canonical_smiles"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 2000
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "cas"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 50
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "mol_formula"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 2000
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "mol_weight"
+    databaseType: "numeric"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 2
+    length: null
+    precision: 131089
+    fractionalDigits: 0
+    radix: 10
+  - name: "mol_file"
+    databaseType: "text"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 2147483647
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "inchi"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 2000
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "inchi_key"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 27
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "standard_inchi"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 2000
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "standard_inchi_key"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 27
+    precision: null
+    fractionalDigits: null
+    radix: null
+- relationId:
+    schema: "xdagentest"
+    name: "drug"
+  relationType: "Table"
+  relationComment: null
+  fields:
+  - name: "id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 1
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "name"
+    databaseType: "varchar"
+    nullable: false
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 500
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "compound_id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "mesh_id"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 7
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "drugbank_id"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 7
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "cid"
+    databaseType: "int4"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "therapeutic_indications"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 4000
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "spl"
+    databaseType: "xml"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 2009
+    length: null
+    precision: null
+    fractionalDigits: null
+    radix: null
+- relationId:
+    schema: "xdagentest"
+    name: "drug_functional_category"
+  relationType: "Table"
+  relationComment: null
+  fields:
+  - name: "drug_id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 1
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "functional_category_id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 2
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "authority_id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 3
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "seq"
+    databaseType: "int4"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+- relationId:
+    schema: "xdagentest"
+    name: "drug_reference"
+  relationType: "Table"
+  relationComment: null
+  fields:
+  - name: "drug_id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 1
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "reference_id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 2
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "priority"
+    databaseType: "int4"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+- relationId:
+    schema: "xdagentest"
+    name: "functional_category"
+  relationType: "Table"
+  relationComment: null
+  fields:
+  - name: "id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 1
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "name"
+    databaseType: "varchar"
+    nullable: false
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 500
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "description"
+    databaseType: "varchar"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 2000
+    precision: null
+    fractionalDigits: null
+    radix: null
+  - name: "parent_functional_category_id"
+    databaseType: "int4"
+    nullable: true
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+- relationId:
+    schema: "xdagentest"
+    name: "manufacturer"
+  relationType: "Table"
+  relationComment: null
+  fields:
+  - name: "id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 1
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "name"
+    databaseType: "varchar"
+    nullable: false
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 200
+    precision: null
+    fractionalDigits: null
+    radix: null
+- relationId:
+    schema: "xdagentest"
+    name: "reference"
+  relationType: "Table"
+  relationComment: null
+  fields:
+  - name: "id"
+    databaseType: "int4"
+    nullable: false
+    primaryKeyPartNumber: 1
+    comment: null
+    jdbcTypeCode: 4
+    length: null
+    precision: 10
+    fractionalDigits: 0
+    radix: 10
+  - name: "publication"
+    databaseType: "varchar"
+    nullable: false
+    primaryKeyPartNumber: null
+    comment: null
+    jdbcTypeCode: 12
+    length: 2000
+    precision: null
+    fractionalDigits: null
+    radix: null
+foreignKeys:
+- sourceRelationId:
+    schema: "xdagentest"
+    name: "advisory"
+  targetRelationId:
+    schema: "xdagentest"
+    name: "advisory_type"
+  foreignKeyComponents:
+  - foreignKeyFieldName: "advisory_type_id"
+    primaryKeyFieldName: "id"
+- sourceRelationId:
+    schema: "xdagentest"
+    name: "advisory"
+  targetRelationId:
+    schema: "xdagentest"
+    name: "drug"
+  foreignKeyComponents:
+  - foreignKeyFieldName: "drug_id"
+    primaryKeyFieldName: "id"
+- sourceRelationId:
+    schema: "xdagentest"
+    name: "advisory_type"
+  targetRelationId:
+    schema: "xdagentest"
+    name: "authority"
+  foreignKeyComponents:
+  - foreignKeyFieldName: "authority_id"
+    primaryKeyFieldName: "id"
+- sourceRelationId:
+    schema: "xdagentest"
+    name: "brand"
+  targetRelationId:
+    schema: "xdagentest"
+    name: "drug"
+  foreignKeyComponents:
+  - foreignKeyFieldName: "drug_id"
+    primaryKeyFieldName: "id"
+- sourceRelationId:
+    schema: "xdagentest"
+    name: "brand"
+  targetRelationId:
+    schema: "xdagentest"
+    name: "manufacturer"
+  foreignKeyComponents:
+  - foreignKeyFieldName: "manufacturer_id"
+    primaryKeyFieldName: "id"
+- sourceRelationId:
+    schema: "xdagentest"
+    name: "drug"
+  targetRelationId:
+    schema: "xdagentest"
+    name: "compound"
+  foreignKeyComponents:
+  - foreignKeyFieldName: "compound_id"
+    primaryKeyFieldName: "id"
+- sourceRelationId:
+    schema: "xdagentest"
+    name: "drug_functional_category"
+  targetRelationId:
+    schema: "xdagentest"
+    name: "authority"
+  foreignKeyComponents:
+  - foreignKeyFieldName: "authority_id"
+    primaryKeyFieldName: "id"
+- sourceRelationId:
+    schema: "xdagentest"
+    name: "drug_functional_category"
+  targetRelationId:
+    schema: "xdagentest"
+    name: "drug"
+  foreignKeyComponents:
+  - foreignKeyFieldName: "drug_id"
+    primaryKeyFieldName: "id"
+- sourceRelationId:
+    schema: "xdagentest"
+    name: "drug_functional_category"
+  targetRelationId:
+    schema: "xdagentest"
+    name: "functional_category"
+  foreignKeyComponents:
+  - foreignKeyFieldName: "functional_category_id"
+    primaryKeyFieldName: "id"
+- sourceRelationId:
+    schema: "xdagentest"
+    name: "drug_reference"
+  targetRelationId:
+    schema: "xdagentest"
+    name: "drug"
+  foreignKeyComponents:
+  - foreignKeyFieldName: "drug_id"
+    primaryKeyFieldName: "id"
+- sourceRelationId:
+    schema: "xdagentest"
+    name: "drug_reference"
+  targetRelationId:
+    schema: "xdagentest"
+    name: "reference"
+  foreignKeyComponents:
+  - foreignKeyFieldName: "reference_id"
+    primaryKeyFieldName: "id"
+- sourceRelationId:
+    schema: "xdagentest"
+    name: "functional_category"
+  targetRelationId:
+    schema: "xdagentest"
+    name: "functional_category"
+  foreignKeyComponents:
+  - foreignKeyFieldName: "parent_functional_category_id"
+    primaryKeyFieldName: "id"

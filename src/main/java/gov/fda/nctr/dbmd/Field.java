@@ -1,12 +1,16 @@
 package gov.fda.nctr.dbmd;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.sql.Types;
 import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 
+@JsonPropertyOrder({
+  "name", "databaseType", "nullable", "primaryKeyPartNumber", "comment"
+})
 public class Field {
 
     private String name;

@@ -5,8 +5,6 @@ import java.sql.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import static gov.fda.nctr.dbmd.RelMetaData.RelType.Table;
-import static gov.fda.nctr.dbmd.RelMetaData.RelType.View;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
@@ -14,9 +12,12 @@ import static java.util.stream.Collectors.toMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 import gov.fda.nctr.dbmd.RelMetaData.RelType;
+import static gov.fda.nctr.dbmd.RelMetaData.RelType.Table;
+import static gov.fda.nctr.dbmd.RelMetaData.RelType.View;
 
 
 public class DatabaseMetaDataFetcher {
@@ -569,10 +570,28 @@ public class DatabaseMetaDataFetcher {
                         excludeRelsPat
                     );
 
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.registerModule(new Jdk8Module());
-                mapper.enable(SerializationFeature.INDENT_OUTPUT);
-                mapper.writeValue(os, dbmd);
+                String outputFormat = optn(props.getProperty("output-format")).orElse("json");
+
+                switch ( outputFormat )
+                {
+                    case "json":
+                    {
+                        ObjectMapper mapper = new ObjectMapper();
+                        mapper.registerModule(new Jdk8Module());
+                        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+                        mapper.writeValue(os, dbmd);
+                        break;
+                    }
+                    case "yaml":
+                    {
+                        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+                        mapper.registerModule(new Jdk8Module());
+                        mapper.writeValue(os, dbmd);
+                        break;
+                    }
+                    default:
+                        throw new RuntimeException("output format in property must be json or yaml");
+                }
             }
         }
     }

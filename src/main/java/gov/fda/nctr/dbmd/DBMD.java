@@ -1,5 +1,7 @@
 package gov.fda.nctr.dbmd;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
@@ -7,6 +9,10 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 
+@JsonPropertyOrder({
+  "schemaName", "dbmsName", "dbmsVersion", "dbmsMajorVersion", "dbmsMinorVersion", "caseSensitivity",
+  "relationMetaDatas", "foreignKeys"
+})
 public class DBMD
 {
     private Optional<String> schemaName;
@@ -435,7 +441,7 @@ public class DBMD
     // Database object name manipulations
 
     // Normalize a database object name.
-    private String normalizeName(String id)
+    public String normalizeName(String id)
     {
         if ( id.startsWith("\"") && id.endsWith("\"") )
             return id;

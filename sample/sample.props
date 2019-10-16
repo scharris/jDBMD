@@ -3,6 +3,8 @@ jdbc-connect-url=jdbc:postgresql://localhost:5432/xdagentest
 user=xdagentest
 password=xdagentest
 relations-owner=xdagentest
+# output-format=yaml|json
+output-format=yaml
 # date-mapping => DATES_AS_DRIVER_REPORTED | DATES_AS_TIMESTAMPS | DATES_AS_DATES
 date-mapping=DATES_AS_DRIVER_REPORTED
 #exclude-relations-fqname-regex

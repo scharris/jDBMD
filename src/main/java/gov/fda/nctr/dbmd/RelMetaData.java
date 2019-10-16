@@ -7,8 +7,10 @@ import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
+@JsonPropertyOrder({"relationId", "relationType", "relationComment", "fields"})
 public class RelMetaData {
 
     private RelId relId;
