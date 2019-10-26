@@ -3,7 +3,7 @@ package gov.fda.nctr.dbmd;
 import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
-import gov.fda.nctr.dbmd.RelMetaData.RelType;
+import gov.fda.nctr.dbmd.RelMetadata.RelType;
 
 
 public class RelDescr {

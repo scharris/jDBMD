@@ -11,40 +11,40 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 @JsonPropertyOrder({"relationId", "relationType", "relationComment", "fields"})
-public class RelMetaData {
+public class RelMetadata
+{
+    private RelId relationId;
 
-    private RelId relId;
+    private RelType relationType;
 
-    private RelType relType;
-
-    private Optional<String> relComment;
+    private Optional<String> relationComment;
 
     private List<Field> fields;
 
     public enum RelType { Table, View, Unknown }
 
 
-    public RelMetaData
+    public RelMetadata
         (
-            RelId relId,
-            RelType relType,
-            Optional<String> relComment,
+            RelId relationId,
+            RelType relationType,
+            Optional<String> relationComment,
             List<Field> fields
         )
     {
-        this.relId = requireNonNull(relId);
-        this.relType = requireNonNull(relType);
-        this.relComment = requireNonNull(relComment);
+        this.relationId = requireNonNull(relationId);
+        this.relationType = requireNonNull(relationType);
+        this.relationComment = requireNonNull(relationComment);
         this.fields = unmodifiableList(new ArrayList<>(requireNonNull(fields)));
     }
 
-    protected RelMetaData() {}
+    protected RelMetadata() {}
 
-    public RelId getRelationId() { return relId; }
+    public RelId getRelationId() { return relationId; }
 
-    public RelType getRelationType() { return relType; }
+    public RelType getRelationType() { return relationType; }
 
-    public Optional<String> getRelationComment() { return relComment; }
+    public Optional<String> getRelationComment() { return relationComment; }
 
     public List<Field> getFields() { return fields; }
 

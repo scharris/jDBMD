@@ -17,7 +17,7 @@ public class Field {
 
     private int jdbcTypeCode;
 
-    private String dbTypeName;
+    private String databaseType;
 
     private Optional<Integer> length;
 
@@ -27,9 +27,9 @@ public class Field {
 
     private Optional<Integer> radix;
 
-    private Optional<Boolean> isNullable;
+    private Optional<Boolean> nullable;
 
-    private Optional<Integer> pkPartNum;
+    private Optional<Integer> primaryKeyPartNumber;
 
     private Optional<String> comment;
 
@@ -37,25 +37,25 @@ public class Field {
         (
             String name,
             int jdbcTypeCode,
-            String dbTypeName,
+            String databaseType,
             Optional<Integer> length,
             Optional<Integer> precision,
             Optional<Integer> fractionalDigits,
             Optional<Integer> radix,
-            Optional<Boolean> isNullable,
-            Optional<Integer> pkPartNum,
+            Optional<Boolean> nullable,
+            Optional<Integer> primaryKeyPartNumber,
             Optional<String> comment
         )
     {
         this.name = requireNonNull(name);
         this.jdbcTypeCode = requireNonNull(jdbcTypeCode);
-        this.dbTypeName = requireNonNull(dbTypeName);
+        this.databaseType = requireNonNull(databaseType);
         this.length = requireNonNull(length);
         this.fractionalDigits = requireNonNull(fractionalDigits);
         this.radix = requireNonNull(radix);
         this.precision = requireNonNull(precision);
-        this.isNullable = requireNonNull(isNullable);
-        this.pkPartNum = requireNonNull(pkPartNum);
+        this.nullable = requireNonNull(nullable);
+        this.primaryKeyPartNumber = requireNonNull(primaryKeyPartNumber);
         this.comment = requireNonNull(comment);
     }
 
@@ -65,7 +65,7 @@ public class Field {
 
     public int getJdbcTypeCode() { return jdbcTypeCode; }
 
-    public String getDatabaseType() { return dbTypeName; }
+    public String getDatabaseType() { return databaseType; }
 
     public Optional<Integer> getLength() { return length; }
 
@@ -75,9 +75,9 @@ public class Field {
 
     public Optional<Integer> getPrecision() { return precision; }
 
-    public Optional<Boolean> getNullable() { return isNullable; }
+    public Optional<Boolean> getNullable() { return nullable; }
 
-    public Optional<Integer> getPrimaryKeyPartNumber() { return pkPartNum; }
+    public Optional<Integer> getPrimaryKeyPartNumber() { return primaryKeyPartNumber; }
 
     public Optional<String> getComment() { return comment; }
 

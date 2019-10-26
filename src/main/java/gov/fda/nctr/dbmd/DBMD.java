@@ -1,23 +1,28 @@
 package gov.fda.nctr.dbmd;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-
 import java.util.*;
-
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+import static gov.fda.nctr.dbmd.CaseSensitivity.INSENSITIVE_STORED_LOWER;
+import static gov.fda.nctr.dbmd.CaseSensitivity.INSENSITIVE_STORED_UPPER;
+
 
 @JsonPropertyOrder({
-  "schemaName", "dbmsName", "dbmsVersion", "dbmsMajorVersion", "dbmsMinorVersion", "caseSensitivity",
-  "relationMetaDatas", "foreignKeys"
+  "schemaName", "dbmsName", "dbmsVersion", "dbmsMajorVersion", "dbmsMinorVersion",
+  "caseSensitivity", "relationMetadatas", "foreignKeys"
 })
 public class DBMD
 {
     private Optional<String> schemaName;
 
-    private List<RelMetaData> relMetaDatas;
+    private List<RelMetadata> relationMetadatas;
 
     private List<ForeignKey> foreignKeys;
 
@@ -31,10 +36,12 @@ public class DBMD
 
     private int dbmsMinorVersion;
 
+    private static final Predicate<String> lc_ = Pattern.compile("^[a-z_]+$").asPredicate();
+    private static final Predicate<String> uc_ = Pattern.compile("^[A-Z_]+$").asPredicate();
 
     // derived data
     // Access these only via methods of the same name, which make sure these fields are initialized.
-    private Map<RelId, RelMetaData> relMDsByRelId;
+    private Map<RelId, RelMetadata> relMDsByRelId;
 
     private Map<RelId, List<ForeignKey>> fksByParentRelId;
 
@@ -47,19 +54,19 @@ public class DBMD
     }
 
     public DBMD
-        (
-            Optional<String> schemaName,
-            List<RelMetaData> relMetaDatas,
-            List<ForeignKey> foreignKeys,
-            CaseSensitivity caseSensitivity,
-            String dbmsName,
-            String dbmsVersion,
-            int dbmsMajorVersion,
-            int dbmsMinorVersion
-        )
+    (
+        Optional<String> schemaName,
+        List<RelMetadata> relationMetadatas,
+        List<ForeignKey> foreignKeys,
+        CaseSensitivity caseSensitivity,
+        String dbmsName,
+        String dbmsVersion,
+        int dbmsMajorVersion,
+        int dbmsMinorVersion
+    )
     {
         this.schemaName = requireNonNull(schemaName);
-        this.relMetaDatas = sortedMds(requireNonNull(relMetaDatas));
+        this.relationMetadatas = sortedMds(requireNonNull(relationMetadatas));
         this.foreignKeys = sortedFks(requireNonNull(foreignKeys));
         this.caseSensitivity = requireNonNull(caseSensitivity);
         this.dbmsName = requireNonNull(dbmsName);
@@ -72,7 +79,7 @@ public class DBMD
 
     public Optional<String> getSchemaName() { return schemaName; }
 
-    public List<RelMetaData> getRelationMetaDatas() { return relMetaDatas; }
+    public List<RelMetadata> getRelationMetadatas() { return relationMetadatas; }
 
     public List<ForeignKey> getForeignKeys() { return foreignKeys; }
 
@@ -87,19 +94,27 @@ public class DBMD
     public int getDbmsMinorVersion() { return dbmsMinorVersion; }
 
 
-    public Optional<RelMetaData> getRelationMetaData(RelId relId)
+    public Optional<RelMetadata> getRelationMetadata(RelId relId)
     {
         return Optional.ofNullable(relMDsByRelId().get(relId));
     }
 
-    public Optional<RelMetaData> getRelationMetaData(Optional<String> schema, String relName)
+    public Optional<RelMetadata> getRelationMetadata
+    (
+        Optional<String> schema,
+        String relName
+    )
     {
-        return getRelationMetaData(makeRelId(schema, relName));
+        return getRelationMetadata(makeRelId(schema, relName));
     }
 
-    public List<String> getFieldNames(RelId relId, Optional<String> alias)
+    public List<String> getFieldNames
+    (
+        RelId relId,
+        Optional<String> alias
+    )
     {
-        RelMetaData relMd = getRelationMetaData(relId).orElseThrow(() ->
+        RelMetadata relMd = getRelationMetadata(relId).orElseThrow(() ->
             new IllegalArgumentException("Relation " + relId + " not found.")
         );
 
@@ -114,19 +129,32 @@ public class DBMD
         return getFieldNames(relId, Optional.empty());
     }
 
-    public List<String> getFieldNames(Optional<String> schema, String relName)
+    public List<String> getFieldNames
+    (
+        Optional<String> schema,
+        String relName
+    )
     {
         return getFieldNames(makeRelId(schema, relName));
     }
 
-    public List<String> getFieldNames(Optional<String> schema, String relName, Optional<String> alias)
+    public List<String> getFieldNames
+    (
+        Optional<String> schema,
+        String relName,
+        Optional<String> alias
+    )
     {
         return getFieldNames(makeRelId(schema, relName), alias);
     }
 
-    public List<String> getPrimaryKeyFieldNames(RelId relId, Optional<String> alias)
+    public List<String> getPrimaryKeyFieldNames
+    (
+        RelId relId,
+        Optional<String> alias
+    )
     {
-        RelMetaData relMd = getRelationMetaData(relId).orElseThrow(() ->
+        RelMetadata relMd = getRelationMetadata(relId).orElseThrow(() ->
             new IllegalArgumentException("Relation " + relId + " not found.")
         );
 
@@ -138,12 +166,21 @@ public class DBMD
         return getPrimaryKeyFieldNames(relId, Optional.empty());
     }
 
-    public List<String> getPrimaryKeyFieldNames(Optional<String> schema, String relName)
+    public List<String> getPrimaryKeyFieldNames
+    (
+        Optional<String> schema,
+        String relName
+    )
     {
         return getPrimaryKeyFieldNames(makeRelId(schema, relName));
     }
 
-    public List<String> getPrimaryKeyFieldNames(Optional<String> schema, String relName, Optional<String> alias)
+    public List<String> getPrimaryKeyFieldNames
+    (
+        Optional<String> schema,
+        String relName,
+        Optional<String> alias
+    )
     {
         return getPrimaryKeyFieldNames(makeRelId(schema, relName), alias);
     }
@@ -153,7 +190,11 @@ public class DBMD
         return getForeignKeysFromTo(Optional.of(relId), Optional.empty());
     }
 
-    public List<ForeignKey> getForeignKeysToParentsFrom(Optional<String> schema, String relName)
+    public List<ForeignKey> getForeignKeysToParentsFrom
+    (
+        Optional<String> schema,
+        String relName
+    )
     {
         return getForeignKeysFromTo(Optional.of(makeRelId(schema, relName)), Optional.empty());
     }
@@ -163,18 +204,22 @@ public class DBMD
         return getForeignKeysFromTo(Optional.empty(), Optional.of(relId));
     }
 
-    public List<ForeignKey> getForeignKeysFromChildrenTo(Optional<String> schema, String relName)
+    public List<ForeignKey> getForeignKeysFromChildrenTo
+    (
+        Optional<String> schema,
+        String relName
+    )
     {
         return getForeignKeysFromTo(Optional.empty(), Optional.of(makeRelId(schema, relName)));
     }
 
     public List<ForeignKey> getForeignKeysFromTo
-        (
-            String fromSchema,
-            String fromRelName,
-            String toSchema,
-            String toRelName
-        )
+    (
+        String fromSchema,
+        String fromRelName,
+        String toSchema,
+        String toRelName
+    )
     {
         RelId fromRelId = makeRelId(Optional.of(fromSchema), fromRelName);
         RelId toRelId = makeRelId(Optional.of(toSchema), toRelName);
@@ -183,11 +228,11 @@ public class DBMD
     }
 
     public List<ForeignKey> getForeignKeysFromTo
-        (
-            Optional<RelId> childRelId,
-            Optional<RelId> parentRelId,
-            ForeignKeyScope fkScope
-        )
+    (
+        Optional<RelId> childRelId,
+        Optional<RelId> parentRelId,
+        ForeignKeyScope fkScope
+    )
     {
         List<ForeignKey> res = new ArrayList<>();
 
@@ -208,8 +253,8 @@ public class DBMD
             return
                 res.stream()
                 .filter(fk ->
-                    getRelationMetaData(fk.getSourceRelationId()).isPresent() &&
-                    getRelationMetaData(fk.getTargetRelationId()).isPresent()
+                    getRelationMetadata(fk.getSourceRelationId()).isPresent() &&
+                    getRelationMetadata(fk.getTargetRelationId()).isPresent()
                 )
                 .collect(toList());
         }
@@ -218,10 +263,10 @@ public class DBMD
     }
 
     public List<ForeignKey> getForeignKeysFromTo
-        (
-            Optional<RelId> childRelId,
-            Optional<RelId> parentRelId
-        )
+    (
+        Optional<RelId> childRelId,
+        Optional<RelId> parentRelId
+    )
     {
         return
             getForeignKeysFromTo(
@@ -236,12 +281,12 @@ public class DBMD
      *  the requirements.
      */
     public Optional<ForeignKey> getForeignKeyFromTo
-        (
-            RelId fromRelId,
-            RelId toRelId,
-            Optional<Set<String>> fieldNames,
-            ForeignKeyScope fkScope
-        )
+    (
+        RelId fromRelId,
+        RelId toRelId,
+        Optional<Set<String>> fieldNames,
+        ForeignKeyScope fkScope
+    )
     {
         Optional<RelId> fromRel = Optional.of(fromRelId);
         Optional<RelId> toRel = Optional.of(toRelId);
@@ -272,10 +317,10 @@ public class DBMD
 
     /** Return the field names in the passed table involved in foreign keys (to parents). */
     public Set<String> getForeignKeyFieldNames
-        (
-            RelId relId,
-            Optional<String> alias
-        )
+    (
+        RelId relId,
+        Optional<String> alias
+    )
     {
         return
             getForeignKeysToParentsFrom(relId).stream()
@@ -313,10 +358,10 @@ public class DBMD
     }
 
     public Optional<ForeignKey> getForeignKeyHavingFieldSetAmong
-        (
-            Set<String> srcFieldNames,
-            Collection<ForeignKey> fks
-        )
+    (
+        Set<String> srcFieldNames,
+        Collection<ForeignKey> fks
+    )
     {
         Set<String> normdFieldNames = normalizeNames(srcFieldNames);
 
@@ -329,9 +374,9 @@ public class DBMD
     /////////////////////////////////////////////////////////
     // Sorting for deterministic output
 
-    private static List<RelMetaData> sortedMds(List<RelMetaData> relMds)
+    private static List<RelMetadata> sortedMds(List<RelMetadata> relMds)
     {
-        List<RelMetaData> rmds = new ArrayList<>(relMds);
+        List<RelMetadata> rmds = new ArrayList<>(relMds);
 
         rmds.sort(Comparator.comparing(rmd -> rmd.getRelationId().getIdString()));
 
@@ -365,7 +410,11 @@ public class DBMD
         return Collections.unmodifiableList(fks);
     }
 
-    private static int compareStringListsLexicographically(List<String> strs1, List<String> strs2)
+    private static int compareStringListsLexicographically
+    (
+        List<String> strs1,
+        List<String> strs2
+    )
     {
         int commonCount = Math.min(strs1.size(), strs2.size());
 
@@ -386,7 +435,7 @@ public class DBMD
     /////////////////////////////////////////////////////////
     // Derived data accessor methods
 
-    private Map<RelId, RelMetaData> relMDsByRelId()
+    private Map<RelId, RelMetadata> relMDsByRelId()
     {
         if ( relMDsByRelId == null )
             initDerivedData();
@@ -418,7 +467,7 @@ public class DBMD
         fksByParentRelId = new HashMap<>();
         fksByChildRelId = new HashMap<>();
 
-        for ( RelMetaData relMd : relMetaDatas )
+        for ( RelMetadata relMd : relationMetadatas)
             relMDsByRelId.put(relMd.getRelationId(), relMd);
 
         for (ForeignKey fk : foreignKeys)
@@ -440,14 +489,35 @@ public class DBMD
     ////////////////////////////////////////////////////////
     // Database object name manipulations
 
+    /// Quote a database identifier only if it would be interpreted differently if quoted.
+    public String quoteIfNeeded(String id)
+    {
+        if ( id.startsWith("\"") && id.endsWith("\"") )
+            return id;
+        if ( caseSensitivity == INSENSITIVE_STORED_LOWER && lc_.test(id) )
+            return id;
+        if ( caseSensitivity == INSENSITIVE_STORED_UPPER && uc_.test(id) )
+            return id;
+        return "\"" + id + "\"";
+    }
+
     // Normalize a database object name.
     public String normalizeName(String id)
     {
         if ( id.startsWith("\"") && id.endsWith("\"") )
+        {
+            // If the quotes can be removed without changing the final identifier
+            // as  interpreted by the database, then return the unquoted form.
+            String unquotedId = id.substring(1, id.length()-1);
+            if ( caseSensitivity == INSENSITIVE_STORED_LOWER && lc_.test(unquotedId) )
+                return unquotedId;
+            if ( caseSensitivity == INSENSITIVE_STORED_UPPER && uc_.test(unquotedId) )
+                return unquotedId;
             return id;
-        else if ( caseSensitivity == CaseSensitivity.INSENSITIVE_STORED_LOWER )
+        }
+        else if ( caseSensitivity == INSENSITIVE_STORED_LOWER )
             return id.toLowerCase();
-        else if ( caseSensitivity == CaseSensitivity.INSENSITIVE_STORED_UPPER )
+        else if ( caseSensitivity == INSENSITIVE_STORED_UPPER )
             return id.toUpperCase();
         else
             return id;
@@ -458,26 +528,17 @@ public class DBMD
         return names.stream().map(this::normalizeName).collect(toSet());
     }
 
-
-    public <E> Map<String,E> normalizeNameKeys(Map<String, E> mapWithIdentifierKeys)
-    {
-        Map<String, E> res = new HashMap<>();
-
-        for (Map.Entry<String, E> entry : mapWithIdentifierKeys.entrySet())
-        {
-            res.put(normalizeName(entry.getKey()), entry.getValue());
-        }
-
-        return res;
-    }
-
     private static String dotQualify(Optional<String> alias, String name)
     {
         return alias.map(a -> a + "." + name).orElse(name);
     }
 
 
-    public RelId makeRelId(Optional<String> schema, String relName)
+    public RelId makeRelId
+    (
+        Optional<String> schema,
+        String relName
+    )
     {
         return new RelId(schema.map(this::normalizeName), normalizeName(relName));
     }
@@ -502,6 +563,28 @@ public class DBMD
 
         return new RelId(schema.map(this::normalizeName), normalizeName(relName));
     }
+
+    /// Make a relation id from a given qualified or unqualified table identifier
+    /// and an optional default schema for interpreting unqualified table names.
+    public RelId identifyTable(String table, Optional<String> defaultSchema)
+    {
+        if ( table.contains("\"") )
+            throw new RuntimeException("quoted table names are not supported currently");
+
+        int dotIx = table.indexOf('.');
+
+        if ( dotIx != -1 ) // already qualified, split it
+            return
+               new RelId(
+                  Optional.of(normalizeName(table.substring(dotIx+1))),
+                  normalizeName(table.substring(0, dotIx))
+               );
+        else // not qualified, qualify it if there is a default schema
+            return
+               defaultSchema.map(schema -> new RelId(Optional.of(normalizeName(schema)), normalizeName(table)))
+                  .orElse(new RelId(empty(), normalizeName(table)));
+    }
+
 
     // Database object name manipulations
     ////////////////////////////////////////////////////////

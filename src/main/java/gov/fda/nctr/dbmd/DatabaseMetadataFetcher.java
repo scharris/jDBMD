@@ -15,24 +15,25 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
-import gov.fda.nctr.dbmd.RelMetaData.RelType;
-import static gov.fda.nctr.dbmd.RelMetaData.RelType.Table;
-import static gov.fda.nctr.dbmd.RelMetaData.RelType.View;
+import gov.fda.nctr.dbmd.RelMetadata.RelType;
+import static gov.fda.nctr.dbmd.RelMetadata.RelType.Table;
+import static gov.fda.nctr.dbmd.RelMetadata.RelType.View;
 
 
-public class DatabaseMetaDataFetcher {
+public class DatabaseMetadataFetcher
+{
 
     public enum DateMapping { DATES_AS_DRIVER_REPORTED, DATES_AS_TIMESTAMPS, DATES_AS_DATES }
 
     private DateMapping dateMapping;
 
 
-    public DatabaseMetaDataFetcher()
+    public DatabaseMetadataFetcher()
     {
         this(DateMapping.DATES_AS_DRIVER_REPORTED);
     }
 
-    public DatabaseMetaDataFetcher(DateMapping mapping)
+    public DatabaseMetadataFetcher(DateMapping mapping)
     {
         this.dateMapping = mapping;
     }
@@ -42,7 +43,7 @@ public class DatabaseMetaDataFetcher {
         this.dateMapping = mapping;
     }
 
-    public DBMD fetchMetaData
+    public DBMD fetchMetadata
         (
             Connection conn,
             Optional<String> schema,
@@ -54,7 +55,7 @@ public class DatabaseMetaDataFetcher {
         throws SQLException
     {
         return
-            fetchMetaData(
+            fetchMetadata(
                 conn.getMetaData(),
                 schema,
                 includeTables,
@@ -64,7 +65,7 @@ public class DatabaseMetaDataFetcher {
             );
     }
 
-    public DBMD fetchMetaData
+    public DBMD fetchMetadata
         (
             DatabaseMetaData dbmd,
             Optional<String> schema,
@@ -81,7 +82,7 @@ public class DatabaseMetaDataFetcher {
 
         List<RelDescr> relDescrs = fetchRelationDescriptions(dbmd, nSchema, includeTables, includeViews, excludeRelsPat);
 
-        List<RelMetaData> relMds = fetchRelationMetaDatas(relDescrs, nSchema, dbmd);
+        List<RelMetadata> relMds = fetchRelationMetadatas(relDescrs, nSchema, dbmd);
 
         List<ForeignKey> fks = includeFks ? fetchForeignKeys(nSchema, dbmd, excludeRelsPat) : emptyList();
 
@@ -162,7 +163,7 @@ public class DatabaseMetaDataFetcher {
         return relDescrs;
     }
 
-    public List<RelMetaData> fetchRelationMetaDatas
+    public List<RelMetadata> fetchRelationMetadatas
         (
             List<RelDescr> relDescrs, // descriptions of relations to include
             Optional<String> schema,
@@ -170,10 +171,10 @@ public class DatabaseMetaDataFetcher {
         )
         throws SQLException
     {
-        return fetchRelationMetaDatas(relDescrs, schema, conn.getMetaData());
+        return fetchRelationMetadatas(relDescrs, schema, conn.getMetaData());
     }
 
-    public List<RelMetaData> fetchRelationMetaDatas
+    public List<RelMetadata> fetchRelationMetadatas
         (
             List<RelDescr> relDescrs, // descriptions of relations to include
             Optional<String> schema,
@@ -185,8 +186,8 @@ public class DatabaseMetaDataFetcher {
 
         try ( ResultSet colsRS = dbmd.getColumns(null, schema.orElse(null), "%", "%") )
         {
-            List<RelMetaData> relMds = new ArrayList<>();
-            RelMetaDataBuilder rmdBldr = null;
+            List<RelMetadata> relMds = new ArrayList<>();
+            RelMetadataBuilder rmdBldr = null;
 
             while ( colsRS.next() )
             {
@@ -207,7 +208,7 @@ public class DatabaseMetaDataFetcher {
                         if ( rmdBldr != null )
                             relMds.add(rmdBldr.build());
 
-                        rmdBldr = new RelMetaDataBuilder(relId, relDescr.getRelationType(), relDescr.getRelationComment());
+                        rmdBldr = new RelMetadataBuilder(relId, relDescr.getRelationType(), relDescr.getRelationComment());
                     }
 
                     rmdBldr.addField(f);
@@ -414,17 +415,18 @@ public class DatabaseMetaDataFetcher {
         void addComponent(ForeignKey.Component comp) { comps.add(comp); }
     }
 
-    private static class RelMetaDataBuilder {
+    private static class RelMetadataBuilder
+    {
 
         private final RelId relId;
 
-        private final RelMetaData.RelType relType;
+        private final RelMetadata.RelType relType;
 
         private final Optional<String> relComment;
 
         private final List<Field> fields;
 
-        public RelMetaDataBuilder
+        public RelMetadataBuilder
                 (
                         RelId relId,
                         RelType relType,
@@ -439,9 +441,9 @@ public class DatabaseMetaDataFetcher {
 
         public void addField(Field f) { fields.add(f); }
 
-        public RelMetaData build()
+        public RelMetadata build()
         {
-            return new RelMetaData(relId, relType, relComment, fields);
+            return new RelMetadata(relId, relType, relComment, fields);
         }
     }
 
@@ -560,8 +562,8 @@ public class DatabaseMetaDataFetcher {
                     getProperty(props, "exclude-relations-fqname-regex").map(Pattern::compile);
 
                 DBMD dbmd =
-                    new DatabaseMetaDataFetcher(dateMapping)
-                    .fetchMetaData(
+                    new DatabaseMetadataFetcher(dateMapping)
+                    .fetchMetadata(
                         conn.getMetaData(),
                         relsOwner,
                         true,

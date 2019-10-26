@@ -13,40 +13,40 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class ForeignKey implements Serializable {
 
-    private RelId srcRel;
+    private RelId sourceRelationId;
 
-    private RelId tgtRel;
+    private RelId targetRelationId;
 
-    private List<Component> components;
+    private List<Component> foreignKeyComponents;
 
     public enum EquationStyle {SOURCE_ON_LEFTHAND_SIDE, TARGET_ON_LEFTHAND_SIDE}
 
     public ForeignKey
         (
-            RelId srcRel,
-            RelId tgtRel,
-            List<Component> components
+            RelId sourceRelationId,
+            RelId targetRelationId,
+            List<Component> foreignKeyComponents
         )
     {
-        this.srcRel = requireNonNull(srcRel);
-        this.tgtRel = requireNonNull(tgtRel);
-        this.components = unmodifiableList(new ArrayList<>(requireNonNull(components)));
+        this.sourceRelationId = requireNonNull(sourceRelationId);
+        this.targetRelationId = requireNonNull(targetRelationId);
+        this.foreignKeyComponents = unmodifiableList(new ArrayList<>(requireNonNull(foreignKeyComponents)));
     }
 
     protected ForeignKey() {}
 
-    public RelId getSourceRelationId() { return srcRel; }
+    public RelId getSourceRelationId() { return sourceRelationId; }
 
-    public RelId getTargetRelationId() { return tgtRel; }
+    public RelId getTargetRelationId() { return targetRelationId; }
 
-    public List<Component> getForeignKeyComponents() { return components; }
+    public List<Component> getForeignKeyComponents() { return foreignKeyComponents; }
 
     @JsonIgnore()
     public List<String> getSourceFieldNames()
     {
         List<String> names = new ArrayList<>();
 
-        for(Component comp: components)
+        for(Component comp: foreignKeyComponents)
             names.add(comp.getForeignKeyFieldName());
 
         return names;
@@ -57,18 +57,20 @@ public class ForeignKey implements Serializable {
     {
         List<String> names = new ArrayList<>();
 
-        for(Component comp: components)
+        for(Component comp: foreignKeyComponents)
             names.add(comp.getPrimaryKeyFieldName());
 
         return names;
     }
 
-
-    public String asEquation(String src_rel_alias, String tgt_rel_alias)
+    public String asEquation
+        (
+            String src_rel_alias,
+            String tgt_rel_alias
+        )
     {
         return asEquation(src_rel_alias, tgt_rel_alias, EquationStyle.SOURCE_ON_LEFTHAND_SIDE);
     }
-
 
     public String asEquation
         (
@@ -81,7 +83,7 @@ public class ForeignKey implements Serializable {
 
         boolean srcFirst = style == EquationStyle.SOURCE_ON_LEFTHAND_SIDE;
 
-        for ( Component fkc: components )
+        for ( Component fkc: foreignKeyComponents)
         {
             if ( sb.length() > 0 )
                 sb.append(" and ");
@@ -125,25 +127,23 @@ public class ForeignKey implements Serializable {
         return childFkFieldNames.equals(normdReqdFkFieldNames);
     }
 
+    public static class Component
+    {
+        private String foreignKeyFieldName;
 
-    public static class Component {
-
-        private String fkFieldName;
-
-        private String pkFieldName;
+        private String primaryKeyFieldName;
 
         public Component(String fkName, String pkName)
         {
-            fkFieldName = fkName;
-            pkFieldName = pkName;
+            foreignKeyFieldName = fkName;
+            primaryKeyFieldName = pkName;
         }
 
         protected Component() {}
 
+        public String getForeignKeyFieldName() { return foreignKeyFieldName; }
 
-        public String getForeignKeyFieldName() { return fkFieldName; }
-
-        public String getPrimaryKeyFieldName() { return pkFieldName; }
+        public String getPrimaryKeyFieldName() { return primaryKeyFieldName; }
     }
 }
 
